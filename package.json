@@ -21,7 +21,9 @@
     "@angular/platform-browser": "~10.2.0",
     "@angular/platform-browser-dynamic": "~10.2.0",
     "@angular/router": "~10.2.0",
+    "@jsplumb/browser-ui": "^4.0.0-RC47",
     "fast-xml-parser": "^3.17.6",
+    "leader-line": "^1.0.5",
     "rxjs": "~6.6.0",
     "tslib": "^2.0.0",
     "zone.js": "~0.10.2"

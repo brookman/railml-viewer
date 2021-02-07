@@ -200,6 +200,7 @@ export class TrainPart {
   line: string;
   op: OperatingPeriod;
   ocpTTs: OcpTT[] = [];
+  referencedBy: Set<Train> = new Set();
 
   constructor(iTrainPart: ITrainPart, op: OperatingPeriod, ocps: Map<string, Ocp>) {
     this.id = iTrainPart.attributes.id;
@@ -220,8 +221,16 @@ export class TrainPart {
     return this.ocpTTs[0].ocp.name;
   }
 
+  get fromCode(): string {
+    return this.ocpTTs[0].ocp.code;
+  }
+
   get to(): string {
     return this.ocpTTs[this.ocpTTs.length - 1].ocp.name;
+  }
+
+  get toCode(): string {
+    return this.ocpTTs[this.ocpTTs.length - 1].ocp.code;
   }
 }
 
@@ -247,6 +256,8 @@ export class Train {
   trainNumber: string;
   name: string;
   trainPartSequences: TrainPartSequence[] = [];
+  trainParts: TrainPartRefFlat[] = [];
+  relatedTrains: Set<Train> = new Set();
 
   constructor(iTrain: ITrain, trainParts: Map<string, TrainPart>) {
     this.id = iTrain.attributes.id;
@@ -254,13 +265,56 @@ export class Train {
     this.trainNumber = iTrain.attributes.trainNumber;
     this.name = iTrain.attributes.name;
 
-    // TrainParts
-    let seq = iTrain.trainPartSequence;
-    let seqs = Array.isArray(seq) ? seq : [seq];
-    for (let iSeq of seqs) {
+    // TrainPartSequences
+    for (let iSeq of Util.toArray(iTrain.trainPartSequence)) {
       let tpSeq = new TrainPartSequence(iSeq, trainParts);
       this.trainPartSequences.push(tpSeq);
     }
+
+    // TrainParts flat
+    for (let seq of this.trainPartSequences) {
+      let first = true;
+      let lastPosition = 0;
+      let offset = 0;
+      for (let tp of seq.trainParts) {
+        let span = first ? seq.trainParts.length : 0;
+        first = false;
+        if (tp.position === lastPosition) {
+          offset++;
+        } else {
+          offset = 0;
+        }
+        lastPosition = tp.position;
+        this.trainParts.push(new TrainPartRefFlat(seq.sequence, span, tp.position, offset, tp.trainPart));
+      }
+    }
+  }
+
+  getRelatedTrainsRecursively(): Set<Train> {
+    let relatedTrains: Set<Train> = new Set();
+    this.addAllRelatedTrainsRecursively(relatedTrains, this);
+    return relatedTrains;
+  }
+
+  private addAllRelatedTrainsRecursively(relatedTrains: Set<Train>, train: Train) {
+    if (!relatedTrains.has(train)) {
+      relatedTrains.add(train);
+      for (let relatedTrain of train.relatedTrains) {
+        this.addAllRelatedTrainsRecursively(relatedTrains, relatedTrain);
+      }
+    }
+  }
+
+  get numberOfSequences(): number {
+    return this.trainPartSequences.length;
+  }
+
+  get numberOfTrainParts(): number {
+    let sum = 0;
+    for (let seq of this.trainPartSequences) {
+      sum += seq.trainParts.length;
+    }
+    return sum;
   }
 }
 
@@ -272,13 +326,20 @@ export class TrainPartSequence {
     this.sequence = parseInt(iTrainPartSequence.attributes.sequence);
 
     // TrainParts
-    let ref = iTrainPartSequence.trainPartRef;
-    let refs = Array.isArray(ref) ? ref : [ref];
-    for (let iRef of refs) {
+    for (let iRef of Util.toArray(iTrainPartSequence.trainPartRef)) {
       let tp = trainParts.get(iRef.attributes.ref);
       let tpRef = new TrainPartRef(iRef, tp);
       this.trainParts.push(tpRef);
     }
+  }
+}
+
+export class Util {
+  public static toArray(obj: any) {
+    if (obj === undefined || obj === null) {
+      return [];
+    }
+    return Array.isArray(obj) ? obj : [obj];
   }
 }
 
@@ -292,8 +353,29 @@ export class TrainPartRef {
   }
 }
 
+export class TrainPartRefFlat {
+  sequence: number;
+  span: number;
+  position: number;
+  positionOffset: number;
+  trainPart: TrainPart;
+
+  constructor(sequence: number, span: number, position: number, positionOffset: number, trainPart: TrainPart) {
+    this.sequence = sequence;
+    this.span = span;
+    this.position = position;
+    this.positionOffset = positionOffset;
+    this.trainPart = trainPart;
+  }
+
+  get toString(): string {
+    return this.trainPart.fromCode + ' - ' + this.trainPart.toCode + ' (' + this.trainPart.op.id + ')';
+  }
+}
+
 export enum TrainType {
-  OPERATIONAL, COMMERCIAL
+  OPERATIONAL = 'operational',
+  COMMERCIAL = 'commercial'
 }
 
 export class Railml {
@@ -328,6 +410,27 @@ export class Railml {
     for (let itrain of iRailmlDocument.railml.timetable.trains.train) {
       let train = new Train(itrain, this.trainParts);
       this.trains.set(train.id, train);
+    }
+
+    // Create TrainPart->Train references
+    for (let train of this.trains.values()) {
+      for (let seq of train.trainPartSequences) {
+        for (let tpRef of seq.trainParts) {
+          let trainPart = tpRef.trainPart;
+          trainPart.referencedBy.add(train);
+        }
+      }
+    }
+
+    // Create Train->Train relations
+    for (let train of this.trains.values()) {
+      for (let seq of train.trainPartSequences) {
+        for (let tpRef of seq.trainParts) {
+          let trainPart = tpRef.trainPart;
+          train.relatedTrains = new Set([...train.relatedTrains, ...trainPart.referencedBy]);
+        }
+      }
+      train.relatedTrains.delete(train); // remove self
     }
   }
 }
