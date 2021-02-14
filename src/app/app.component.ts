@@ -1,10 +1,12 @@
-import {AfterContentChecked, Component, ElementRef, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {AfterContentChecked, AfterViewInit, Component, ElementRef, QueryList, ViewChild, ViewChildren, ViewEncapsulation} from '@angular/core';
 import {RailmlParserService} from "./railml-parser.service";
 import {OperatingPeriod, Railml, Train, TrainPart, TrainType} from "./railml.model";
 import {MatTable, MatTableDataSource} from "@angular/material/table";
 import {MatSort} from "@angular/material/sort";
 import {BehaviorSubject} from "rxjs";
 import {debounceTime, filter} from "rxjs/operators";
+import {MatPaginator} from "@angular/material/paginator";
+import {MatCalendar} from "@angular/material/datepicker";
 
 export interface LeaderLine {
   remove();
@@ -14,12 +16,18 @@ export interface LeaderLine {
 
 declare var LeaderLine: any;
 
+export class Month {
+  constructor(public from: Date, public to: Date) {
+  }
+}
+
 @Component({
   selector: 'app-root',
+  encapsulation: ViewEncapsulation.None,
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements AfterContentChecked {
+export class AppComponent implements AfterContentChecked, AfterViewInit {
   title = 'railml-viewer';
 
   railml: Railml;
@@ -32,8 +40,14 @@ export class AppComponent implements AfterContentChecked {
   directMatch: Set<Train> = new Set();
   relatedMatch: Set<Train> = new Set();
 
+  months: Month[] = []
+  dateClassLambda: (d: Date) => string;
+  selectedOp: OperatingPeriod;
+  @ViewChildren('calendar') calendarElements: QueryList<MatCalendar<Date>>;
+
   @ViewChild(MatSort) sort: MatSort;
   @ViewChild(MatTable) table: MatTable<any>;
+  @ViewChild(MatPaginator) paginator: MatPaginator;
 
   @ViewChildren('tpElement') tpElements: QueryList<ElementRef>;
 
@@ -42,24 +56,37 @@ export class AppComponent implements AfterContentChecked {
   reDrawLines = false;
   updateLines: BehaviorSubject<Object> = new BehaviorSubject<Object>(1);
 
+  mapOptions: google.maps.MapOptions = {
+    center: {lat: 46.7307146911459, lng: 10.11897810703834},
+    zoom: 9
+  };
+  stationCircles: { lat: number, lng: number }[] = [];
+
   ngAfterContentChecked() {
     console.log('ngAfterContentChecked');
     this.updateLines.next(1);
   }
 
+  ngAfterViewInit() {
+    this.dataSource.paginator = this.paginator;
+  }
+
   constructor(railmlParserService: RailmlParserService) {
-    railmlParserService.getRailml('test_smaller.xml')
+    railmlParserService.getRailml('2021_v2_large.xml')
       .subscribe(
         railml => {
           console.log(railml);
           this.railml = railml;
           this.dataSource.data = this.getTrains();
           this.reDrawLines = true;
+          this.dateClassLambda = this.getDateClassLambda();
+          this.months = this.generateMonths(this.railml.startDate, this.railml.endDate);
         },
         err => {
           console.error('Error: ', err);
         }
       );
+
     this.dataSource.filterPredicate = (train, filter) => this.directMatch.has(train) || this.relatedMatch.has(train);
 
     this.updateLines
@@ -99,6 +126,28 @@ export class AppComponent implements AfterContentChecked {
           this.reDrawLines = false;
         }
       });
+  }
+
+  selectTrain(train:Train){
+    this.stationCircles = [];
+    // for (let ocp of this.railml.ocps.values()) {
+    //   this.stationCircles.push({lat: ocp.lat, lng: ocp.lon});
+    // }
+
+    for (let tp of train.trainParts) {
+      for (let ocpTT of tp.trainPart.ocpTTs) {
+        this.stationCircles.push({lat: ocpTT.ocp.lat, lng: ocpTT.ocp.lon});
+      }
+    }
+  }
+
+  dateDiffInDays(a: Date, b: Date) {
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+    // Discard the time and time-zone information.
+    const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+    const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+
+    return Math.floor((utc2 - utc1) / MS_PER_DAY);
   }
 
   getKeys(map) {
@@ -175,5 +224,59 @@ export class AppComponent implements AfterContentChecked {
     this.filter = filterValue.trim().toLowerCase();
     this.dataSource.filter = this.filter;
     this.reDrawLines = true;
+  }
+
+  private generateMonths(startDate: Date, endDate: Date): Month[] {
+    let intervals = [startDate];
+    let oldMonth = startDate.getMonth();
+
+    for (let day of AppComponent.getDaysBetween(startDate, endDate)) {
+      let month = day.getMonth()
+      if (month != oldMonth) {
+        oldMonth = day.getMonth();
+
+        let previousDay = new Date(day.getTime());
+        previousDay.setDate(day.getDate() - 1);
+
+        intervals.push(previousDay);
+        intervals.push(day);
+      }
+    }
+    if (intervals.length % 2 !== 2) {
+      intervals.push(endDate);
+    }
+
+    let result = [];
+    for (let i = 0; i < intervals.length; i += 2) {
+      result.push(new Month(intervals[i], intervals[i + 1]));
+    }
+    return result;
+  }
+
+  private static getDaysBetween(start: Date, end: Date): Date[] {
+    let arr = [];
+    for (let dt = new Date(start); dt <= end; dt.setDate(dt.getDate() + 1)) {
+      arr.push(new Date(dt));
+    }
+    return arr;
+  }
+
+
+  getDateClassLambda(): (d: Date) => string {
+    return (d: Date) => {
+      if (!this.railml || !this.railml.startDate || !this.selectedOp) {
+        return undefined;
+      }
+      let diff = this.dateDiffInDays(this.railml.startDate, d);
+      return (this.selectedOp.bitMask !== undefined && this.selectedOp.bitMask.charAt(diff) === '1') ? 'highlighted-date' : undefined;
+    };
+  }
+
+  setOp(op: OperatingPeriod) {
+    this.selectedOp = op;
+    this.dateClassLambda = this.getDateClassLambda();
+    for (let calendar of this.calendarElements) {
+      calendar.updateTodaysDate();
+    }
   }
 }

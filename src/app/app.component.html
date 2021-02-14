@@ -1,56 +1,84 @@
-<!--<svg height="100%" width="100%" style="position:absolute">-->
-<!--  <ng-container *ngFor="let line of lines">-->
-<!--    <line [attr.x1]="line.x1" [attr.y1]="line.y1" [attr.x2]="line.x2" [attr.y2]="line.y2" style="stroke:rgb(0,0,0);stroke-width:2"/>-->
-<!--  </ng-container>-->
-<!--</svg>-->
+<div fxLayout="row" fxFlex="flex-grow" fxLayoutAlign="space-between" fxLayoutGap="12px" [style.margin-top]="'12px'" [style.margin-left]="'12px'" [style.margin-right]="'12px'" fxFlexFill>
+  <div fxFlex="flex-grow" fxLayout="column" fxLayoutGap="12px">
+    <mat-card>
+      <mat-card-title>Trains</mat-card-title>
+      <mat-card-content>
+        <div fxFlex="flex-grow" fxLayout="column">
 
-<div>
-  <mat-form-field>
-    <mat-label>Filter</mat-label>
-    <input matInput (keyup)="applyFilter($event)" placeholder="1234" #input>
-  </mat-form-field>
+          <mat-form-field>
+            <mat-label>Filter by train number</mat-label>
+            <input matInput (keyup)="applyFilter($event)" placeholder="1234" #input>
+          </mat-form-field>
 
-  <table mat-table matSort [dataSource]="dataSource" class="mat-elevation-z4" style="width:100%">
+          <table mat-table matSort [dataSource]="dataSource" class="mat-elevation-z4" style="width:100%">
 
-    <ng-container matColumnDef="trainNumber">
-      <th mat-header-cell *matHeaderCellDef>Number</th>
-      <td mat-cell *matCellDef="let element" style="background-color:{{getTrainColor(element)}}">
-        <strong *ngIf="highlightTrain(element)">{{element.trainNumber}}</strong>
-        <p *ngIf="!highlightTrain(element)">{{element.trainNumber}}</p>
-      </td>
-    </ng-container>
+            <ng-container matColumnDef="trainNumber">
+              <th mat-header-cell *matHeaderCellDef>Number</th>
+              <td mat-cell *matCellDef="let element" style="background-color:{{getTrainColor(element)}}">
+                <strong *ngIf="highlightTrain(element)" (click)="selectTrain(element)" style="cursor: pointer;">{{element.trainNumber}}</strong>
+                <p *ngIf="!highlightTrain(element)" (click)="selectTrain(element)" style="cursor: pointer;">{{element.trainNumber}}</p>
+              </td>
+            </ng-container>
 
-    <ng-container matColumnDef="type">
-      <th mat-header-cell *matHeaderCellDef>Type</th>
-      <td mat-cell *matCellDef="let element" style="background-color:{{getTrainColor(element)}}">{{element.type}}</td>
-    </ng-container>
+            <ng-container matColumnDef="type">
+              <th mat-header-cell *matHeaderCellDef>Type</th>
+              <td mat-cell *matCellDef="let element" style="background-color:{{getTrainColor(element)}}">{{element.type}}</td>
+            </ng-container>
 
-    <ng-container matColumnDef="name">
-      <th mat-header-cell *matHeaderCellDef>Name</th>
-      <td mat-cell *matCellDef="let element" style="background-color:{{getTrainColor(element)}}">{{element.name}}</td>
-    </ng-container>
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Name</th>
+              <td mat-cell *matCellDef="let element" style="background-color:{{getTrainColor(element)}}">{{element.name}}</td>
+            </ng-container>
 
-    <ng-container matColumnDef="sequences">
-      <th mat-header-cell *matHeaderCellDef>Sequences and train parts</th>
-      <td mat-cell *matCellDef="let element">
+            <ng-container matColumnDef="sequences">
+              <th mat-header-cell *matHeaderCellDef>Sequences and train parts</th>
+              <td mat-cell *matCellDef="let element">
 
-        <table>
-          <ng-container *ngFor="let tpRef of element.trainParts">
-            <tr>
-              <td *ngIf="tpRef.span > 0" [attr.rowspan]="tpRef.span" style="width:50px;background:{{sequenceToColor(tpRef.sequence)}}">{{tpRef.sequence}}</td>
-              <td style="width:15px;background:{{sequenceToColor(tpRef.position)}}">{{tpRef.position}}</td>
-              <td style="width:120px;background:{{trainPartToColor(tpRef.trainPart)}}" #tpElement [attr.data-tpid]="tpRef.trainPart.id">{{tpRef.trainPart.fromCode + ' - ' + tpRef.trainPart.toCode}}</td>
-              <td style="width:70px"></td>
-              <td style="width:100px;background:{{operatingPeriodToColor(tpRef.trainPart.op)}}">OP: {{tpRef.trainPart.op.name}}</td>
-            </tr>
-          </ng-container>
-        </table>
+                <table>
+                  <ng-container *ngFor="let tpRef of element.trainParts">
+                    <tr>
+                      <td *ngIf="tpRef.span > 0" [attr.rowspan]="tpRef.span" style="width:50px;background:{{sequenceToColor(tpRef.sequence)}}">{{tpRef.sequence}}</td>
+                      <td style="width:15px;background:{{sequenceToColor(tpRef.position)}}">{{tpRef.position}}</td>
+                      <td style="width:120px;background:{{trainPartToColor(tpRef.trainPart)}}" #tpElement
+                          [attr.data-tpid]="tpRef.trainPart.id">{{tpRef.trainPart.fromCode + ' - ' + tpRef.trainPart.toCode}}</td>
+                      <td style="width:70px"></td>
+                      <td style="width:100px;background:{{operatingPeriodToColor(tpRef.trainPart.op)}}">
+                        <div (click)="setOp(tpRef.trainPart.op)" style="cursor: pointer;">
+                          OP: {{tpRef.trainPart.op === selectedOp ? ('> ' + tpRef.trainPart.op.name + ' <') : tpRef.trainPart.op.name  }}
+                        </div>
+                      </td>
+                    </tr>
+                  </ng-container>
+                </table>
 
-      </td>
-    </ng-container>
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-  </table>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
 
-  <mat-paginator [pageSizeOptions]="[20, 50, 150, 9999]" showFirstLastButtons></mat-paginator>
+          <mat-paginator [pageSizeOptions]="[20, 150, 5000]" showFirstLastButtons></mat-paginator>
+
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-title>Map</mat-card-title>
+      <mat-card-content>
+        <google-map [options]="mapOptions" width="100%">
+          <map-circle *ngFor="let stationCircle of stationCircles" [center]="stationCircle" [radius]="250"></map-circle>
+        </google-map>
+      </mat-card-content>
+    </mat-card>
+
+  </div>
+  <mat-card fxFlex="" fxLayout="column">
+    <mat-card-title>Calendar</mat-card-title>
+    <mat-card-content>
+
+      <mat-calendar *ngFor="let m of months" [minDate]="m.from" [maxDate]="m.to" [dateClass]="dateClassLambda" class="no-control-calendar" #calendar></mat-calendar>
+
+    </mat-card-content>
+  </mat-card>
 </div>

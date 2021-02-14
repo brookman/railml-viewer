@@ -154,6 +154,8 @@ export class Ocp {
   name: string;
   code: string;
   didok: string;
+  x: number;
+  y: number;
   lat: number;
   lon: number;
 
@@ -163,8 +165,10 @@ export class Ocp {
     this.code = iOcp.attributes.code;
     this.didok = iOcp.designator.attributes.entry;
     let coords: string[] = iOcp.geoCoord.attributes.coord.split(' ');
-    this.lat = Ocp.convertStringToNumber(coords[0]);
-    this.lon = Ocp.convertStringToNumber(coords[1]);
+    this.x = Ocp.convertStringToNumber(coords[1]);
+    this.y = Ocp.convertStringToNumber(coords[0]);
+    this.lat = this.CHtoWGSlat(this.y, this.x);
+    this.lon = this.CHtoWGSlng(this.y, this.x);
   }
 
   private static convertStringToNumber(input: string) {
@@ -173,20 +177,63 @@ export class Ocp {
     }
     return Number(input);
   }
+
+  CHtoWGSlat(y: number, x: number): number {
+    // Converts military to civil and to unit = 1000km
+    // Auxiliary values (% Bern)
+    let y_aux = (y - 600000) / 1000000;
+    let x_aux = (x - 200000) / 1000000;
+    // let y_aux = (y - 0) / 1000000;
+    // let x_aux = (x - 0) / 1000000;
+
+    // Process lat
+    let lat = 16.9023892 +
+      3.238272 * x_aux -
+      0.270978 * Math.pow(y_aux, 2) -
+      0.002528 * Math.pow(x_aux, 2) -
+      0.0447 * Math.pow(y_aux, 2) * x_aux -
+      0.0140 * Math.pow(x_aux, 3);
+
+    // Unit 10000" to 1 " and converts seconds to degrees (dec)
+    lat = lat * 100 / 36;
+
+    return lat;
+  }
+
+  CHtoWGSlng(y: number, x: number): number {
+    // Converts military to civil and	to unit = 1000km
+    // Auxiliary values (% Bern)
+    let y_aux = (y - 600000) / 1000000;
+    let x_aux = (x - 200000) / 1000000;
+    // let y_aux = (y - 0) / 1000000;
+    // let x_aux = (x - 0) / 1000000;
+
+    // Process lng
+    let lng = 2.6779094 +
+      4.728982 * y_aux +
+      0.791484 * y_aux * x_aux +
+      0.1306 * y_aux * Math.pow(x_aux, 2) -
+      0.0436 * Math.pow(y_aux, 3);
+
+    // Unit 10000" to 1 " and converts seconds to degrees (dec)
+    lng = lng * 100 / 36;
+
+    return lng;
+  }
 }
 
 export class OperatingPeriod {
   id: string;
-  startDate: string;
-  endDate: string;
+  startDate: Date;
+  endDate: Date;
   name: string;
   description: string;
   bitMask: string;
 
   constructor(iTimetablePeriod: ITimetablePeriod, iOperatingPeriod: IOperatingPeriod) {
     this.id = iOperatingPeriod.attributes.id;
-    this.startDate = iTimetablePeriod.attributes.startDate;
-    this.endDate = iTimetablePeriod.attributes.endDate;
+    this.startDate = new Date(iTimetablePeriod.attributes.startDate);
+    this.endDate = new Date(iTimetablePeriod.attributes.endDate);
     this.name = iOperatingPeriod.attributes.name;
     this.description = iOperatingPeriod.attributes.description;
     this.bitMask = iOperatingPeriod.attributes.bitMask;
@@ -379,12 +426,17 @@ export enum TrainType {
 }
 
 export class Railml {
+  startDate: Date;
+  endDate: Date;
   ocps = new Map<string, Ocp>();
   ops = new Map<string, OperatingPeriod>();
   trainParts = new Map<string, TrainPart>();
   trains = new Map<string, Train>();
 
   constructor(iRailmlDocument: IRailmlDocument) {
+    let attrs = iRailmlDocument.railml.timetable.timetablePeriods.timetablePeriod.attributes;
+    this.startDate = new Date(attrs.startDate);
+    this.endDate = new Date(attrs.endDate);
 
     // OCPs
     for (let iocp of iRailmlDocument.railml.infrastructure.operationControlPoints.ocp) {

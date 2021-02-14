@@ -1,0 +1,29 @@
+.no-control-calendar {
+  width: 140px;
+  display: inline-block;
+  float: left;
+}
+
+.no-control-calendar .mat-calendar-header {
+  display: none;
+}
+
+//mat-year-view .mat-calendar-body-label{
+//  display: none !important;
+//}
+.no-control-calendar.mat-calendar {
+  height: 120px !important;
+
+  .mat-calendar-table-header th {
+    padding: 8px 0;
+  }
+}
+
+.mat-calendar-table-header {
+  display: none;
+}
+
+.highlighted-date {
+  background: orange;
+  //border-radius: 100%;
+}

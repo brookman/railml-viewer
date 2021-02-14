@@ -30,7 +30,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatListModule} from '@angular/material/list';
 import {MatMenuModule} from '@angular/material/menu';
-import {MatNativeDateModule, MatRippleModule} from '@angular/material/core';
+import {DateAdapter, MatNativeDateModule, MatRippleModule} from '@angular/material/core';
 import {MatPaginatorModule} from '@angular/material/paginator';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
@@ -47,6 +47,9 @@ import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatTreeModule} from '@angular/material/tree';
 import {OverlayModule} from '@angular/cdk/overlay';
+import {MondayFirstDateAdapter} from "./utils";
+import {FlexLayoutModule} from "@angular/flex-layout";
+import {GoogleMapsModule} from "@angular/google-maps";
 
 @NgModule({
   declarations: [
@@ -56,6 +59,8 @@ import {OverlayModule} from '@angular/cdk/overlay';
     BrowserModule,
     BrowserAnimationsModule,
     HttpClientModule,
+
+    GoogleMapsModule,
 
     A11yModule,
     ClipboardModule,
@@ -101,8 +106,9 @@ import {OverlayModule} from '@angular/cdk/overlay';
     OverlayModule,
     PortalModule,
     ScrollingModule,
+    FlexLayoutModule
   ],
-  providers: [],
+  providers: [{provide: DateAdapter, useClass: MondayFirstDateAdapter}],
   bootstrap: [AppComponent]
 })
 export class AppModule {
