@@ -31,8 +31,9 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
   title = 'railml-viewer';
 
   railml: Railml;
+  fileName = "";
   dataSource = new MatTableDataSource([]);
-  displayedColumns: string[] = ['trainNumber', 'type', 'name', 'sequences'];
+  displayedColumns: string[] = ['trainNumber', 'type', 'name', 'complexity', 'sequences'];
   displayedColumnsSeq: string[] = ['sequences', 'trainParts'];
   displayedColumnsPos: string[] = ['tpRef'];
 
@@ -40,12 +41,13 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
   directMatch: Set<Train> = new Set();
   relatedMatch: Set<Train> = new Set();
 
+  @ViewChild(MatSort) sort: MatSort;
+
   months: Month[] = []
   dateClassLambda: (d: Date) => string;
   selectedOp: OperatingPeriod;
   @ViewChildren('calendar') calendarElements: QueryList<MatCalendar<Date>>;
 
-  @ViewChild(MatSort) sort: MatSort;
   @ViewChild(MatTable) table: MatTable<any>;
   @ViewChild(MatPaginator) paginator: MatPaginator;
 
@@ -69,6 +71,7 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
 
   ngAfterViewInit() {
     this.dataSource.paginator = this.paginator;
+    this.dataSource.sort = this.sort;
   }
 
   constructor(public railmlParserService: RailmlParserService) {
@@ -76,7 +79,7 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
     railmlParserService.getRailmlEvents()
       .subscribe(
         railml => {
-          if(railml) {
+          if (railml) {
             console.log(railml);
             this.railml = railml;
             this.dataSource.data = this.getTrains();
@@ -131,7 +134,7 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
       });
   }
 
-  selectTrain(train:Train){
+  selectTrain(train: Train) {
     this.stationCircles = [];
     // for (let ocp of this.railml.ocps.values()) {
     //   this.stationCircles.push({lat: ocp.lat, lng: ocp.lon});
@@ -163,7 +166,7 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
       result = Array.from(this.railml.trains.values());
 
     }
-    result.sort((a, b) => a.trainNumber.localeCompare(b.trainNumber));
+    // result.sort((a, b) => a.trainNumber.localeCompare(b.trainNumber));
     return result;
   }
 
@@ -284,6 +287,7 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
 
   fileBrowserHandler(files: FileList) {
     files[0].text().then(content => {
+      this.fileName = files[0].name;
       this.railmlParserService.emitRailmlFromContent(content);
     });
   }

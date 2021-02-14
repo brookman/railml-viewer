@@ -164,7 +164,7 @@ export class Ocp {
     this.name = iOcp.attributes.name;
     this.code = iOcp.attributes.code;
     this.didok = iOcp.designator?.attributes.entry;
-    if(iOcp.geoCoord) {
+    if (iOcp.geoCoord) {
       let coords: string[] = iOcp.geoCoord.attributes.coord.split(' ');
       this.x = Ocp.convertStringToNumber(coords[1]);
       this.y = Ocp.convertStringToNumber(coords[0]);
@@ -271,7 +271,7 @@ export class TrainPart {
   }
 
   get fromCode(): string {
-    return this.ocpTTs[0].ocp.code;
+    return this.ocpTTs[0].ocp.code || '?';
   }
 
   get to(): string {
@@ -279,7 +279,7 @@ export class TrainPart {
   }
 
   get toCode(): string {
-    return this.ocpTTs[this.ocpTTs.length - 1].ocp.code;
+    return this.ocpTTs[this.ocpTTs.length - 1].ocp.code || '?';;
   }
 }
 
@@ -307,6 +307,7 @@ export class Train {
   trainPartSequences: TrainPartSequence[] = [];
   trainParts: TrainPartRefFlat[] = [];
   relatedTrains: Set<Train> = new Set();
+  complexitySelf = 0;
 
   constructor(iTrain: ITrain, trainParts: Map<string, TrainPart>) {
     this.id = iTrain.attributes.id;
@@ -337,6 +338,8 @@ export class Train {
         this.trainParts.push(new TrainPartRefFlat(seq.sequence, span, tp.position, offset, tp.trainPart));
       }
     }
+
+    this.complexitySelf = this.trainPartSequences.length * this.trainParts.length;
   }
 
   getRelatedTrainsRecursively(): Set<Train> {
@@ -364,6 +367,14 @@ export class Train {
       sum += seq.trainParts.length;
     }
     return sum;
+  }
+
+  get complexity(): number {
+    let relatedComplexity = 0;
+    for (let relatedTrain of this.relatedTrains) {
+      relatedComplexity += relatedTrain.complexitySelf;
+    }
+    return this.complexitySelf * relatedComplexity;
   }
 }
 
