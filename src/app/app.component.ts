@@ -71,16 +71,19 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
     this.dataSource.paginator = this.paginator;
   }
 
-  constructor(railmlParserService: RailmlParserService) {
-    railmlParserService.getRailml('2021_v2_large.xml')
+  constructor(public railmlParserService: RailmlParserService) {
+    // railmlParserService.getRailml('2021_v2_large.xml')
+    railmlParserService.getRailmlEvents()
       .subscribe(
         railml => {
-          console.log(railml);
-          this.railml = railml;
-          this.dataSource.data = this.getTrains();
-          this.reDrawLines = true;
-          this.dateClassLambda = this.getDateClassLambda();
-          this.months = this.generateMonths(this.railml.startDate, this.railml.endDate);
+          if(railml) {
+            console.log(railml);
+            this.railml = railml;
+            this.dataSource.data = this.getTrains();
+            this.reDrawLines = true;
+            this.dateClassLambda = this.getDateClassLambda();
+            this.months = this.generateMonths(this.railml.startDate, this.railml.endDate);
+          }
         },
         err => {
           console.error('Error: ', err);
@@ -261,7 +264,6 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
     return arr;
   }
 
-
   getDateClassLambda(): (d: Date) => string {
     return (d: Date) => {
       if (!this.railml || !this.railml.startDate || !this.selectedOp) {
@@ -278,5 +280,11 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
     for (let calendar of this.calendarElements) {
       calendar.updateTodaysDate();
     }
+  }
+
+  fileBrowserHandler(files: FileList) {
+    files[0].text().then(content => {
+      this.railmlParserService.emitRailmlFromContent(content);
+    });
   }
 }

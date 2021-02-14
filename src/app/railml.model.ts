@@ -22,7 +22,7 @@ export interface IOcp {
     code: string
   };
   geoCoord: IGeoCoord;
-  designator: IDesignator;
+  designator?: IDesignator;
 }
 
 export interface IGeoCoord {
@@ -153,22 +153,24 @@ export class Ocp {
   id: string;
   name: string;
   code: string;
-  didok: string;
-  x: number;
-  y: number;
-  lat: number;
-  lon: number;
+  didok?: string;
+  x: number = 0;
+  y: number = 0;
+  lat: number = 0;
+  lon: number = 0;
 
   constructor(iOcp: IOcp) {
     this.id = iOcp.attributes.id;
     this.name = iOcp.attributes.name;
     this.code = iOcp.attributes.code;
-    this.didok = iOcp.designator.attributes.entry;
-    let coords: string[] = iOcp.geoCoord.attributes.coord.split(' ');
-    this.x = Ocp.convertStringToNumber(coords[1]);
-    this.y = Ocp.convertStringToNumber(coords[0]);
-    this.lat = this.CHtoWGSlat(this.y, this.x);
-    this.lon = this.CHtoWGSlng(this.y, this.x);
+    this.didok = iOcp.designator?.attributes.entry;
+    if(iOcp.geoCoord) {
+      let coords: string[] = iOcp.geoCoord.attributes.coord.split(' ');
+      this.x = Ocp.convertStringToNumber(coords[1]);
+      this.y = Ocp.convertStringToNumber(coords[0]);
+      this.lat = this.CHtoWGSlat(this.y, this.x);
+      this.lon = this.CHtoWGSlng(this.y, this.x);
+    }
   }
 
   private static convertStringToNumber(input: string) {
