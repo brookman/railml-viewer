@@ -50,10 +50,12 @@ import {OverlayModule} from '@angular/cdk/overlay';
 import {MondayFirstDateAdapter} from "./utils";
 import {FlexLayoutModule} from "@angular/flex-layout";
 import {GoogleMapsModule} from "@angular/google-maps";
+import { OpCalendarComponent } from './op-calendar/op-calendar.component';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    OpCalendarComponent
   ],
   imports: [
     BrowserModule,

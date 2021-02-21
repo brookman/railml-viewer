@@ -91,7 +91,8 @@
 
                 <td style="width:60px;background:{{operatingPeriodToColor(trainPart.op)}}">
                   <div (click)="setOp(trainPart.op)" style="cursor: pointer;">
-                    OP: {{trainPart.op === selectedOp ? ('> ' + trainPart.op.name + ' <') : trainPart.op.name  }}
+                    <strong *ngIf="trainPart.op === selectedOp">OP: {{trainPart.op.name}}</strong>
+                    <span *ngIf="trainPart.op !== selectedOp">OP: {{trainPart.op.name}}</span>
                   </div>
                 </td>
               </tr>
@@ -176,12 +177,5 @@
     </mat-card>
 
   </div>
-  <mat-card fxFlex="" fxLayout="column">
-    <mat-card-title>Calendar</mat-card-title>
-    <mat-card-content>
-
-      <mat-calendar *ngFor="let m of months" [minDate]="m.from" [maxDate]="m.to" [dateClass]="dateClassLambda" class="no-control-calendar" #calendar></mat-calendar>
-
-    </mat-card-content>
-  </mat-card>
+  <op-calendar></op-calendar>
 </div>

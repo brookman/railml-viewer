@@ -1,0 +1,8 @@
+<mat-card fxFlex="" fxLayout="column">
+  <mat-card-title>Calendar</mat-card-title>
+  <mat-card-content *ngIf="calendar"  fxFlex="" fxLayout="column">
+
+    <mat-calendar *ngFor="let m of calendar.months" [minDate]="m.from" [maxDate]="m.to" [dateClass]="dateClassLambda" class="no-control-calendar" #calendar></mat-calendar>
+
+  </mat-card-content>
+</mat-card>

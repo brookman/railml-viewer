@@ -6,8 +6,8 @@ import {MatSort} from "@angular/material/sort";
 import {BehaviorSubject} from "rxjs";
 import {debounceTime, filter} from "rxjs/operators";
 import {MatPaginator} from "@angular/material/paginator";
-import {MatCalendar} from "@angular/material/datepicker";
 import {GoogleMap} from "@angular/google-maps";
+import {OpCalendarService} from "./op-calendar/op-calendar.service";
 
 export interface LeaderLine {
   remove();
@@ -17,10 +17,6 @@ export interface LeaderLine {
 
 declare var LeaderLine: any;
 
-export class Month {
-  constructor(public from: Date, public to: Date) {
-  }
-}
 
 @Component({
   selector: 'app-root',
@@ -44,10 +40,7 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
 
   @ViewChild(MatSort) sort: MatSort;
 
-  months: Month[] = []
-  dateClassLambda: (d: Date) => string;
   selectedOp: OperatingPeriod;
-  @ViewChildren('calendar') calendarElements: QueryList<MatCalendar<Date>>;
 
   @ViewChild(MatTable) table: MatTable<any>;
   @ViewChild(MatPaginator) paginator: MatPaginator;
@@ -84,7 +77,10 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
     this.dataSource2.sort = this.sort;
   }
 
-  constructor(public railmlParserService: RailmlParserService) {
+  constructor(
+    private railmlParserService: RailmlParserService,
+    private opCalendarService: OpCalendarService,
+  ) {
     // railmlParserService.getRailml('2021_v2_large.xml')
     railmlParserService.getRailmlEvents()
       .subscribe(
@@ -95,8 +91,6 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
             this.dataSource.data = this.getTrains();
             this.dataSource2.data = this.getTrains();
             this.reDrawLines = true;
-            this.dateClassLambda = this.getDateClassLambda();
-            this.months = this.generateMonths(this.railml.startDate, this.railml.endDate);
           }
         },
         err => {
@@ -230,15 +224,6 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
     this.map.fitBounds(latlngbounds);
   }
 
-  dateDiffInDays(a: Date, b: Date) {
-    const MS_PER_DAY = 1000 * 60 * 60 * 24;
-    // Discard the time and time-zone information.
-    const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
-    const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-
-    return Math.floor((utc2 - utc1) / MS_PER_DAY);
-  }
-
   getKeys(map) {
     return Array.from(map.keys());
   }
@@ -328,57 +313,9 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
     }
   }
 
-  private generateMonths(startDate: Date, endDate: Date): Month[] {
-    let intervals = [startDate];
-    let oldMonth = startDate.getMonth();
-
-    for (let day of AppComponent.getDaysBetween(startDate, endDate)) {
-      let month = day.getMonth()
-      if (month != oldMonth) {
-        oldMonth = day.getMonth();
-
-        let previousDay = new Date(day.getTime());
-        previousDay.setDate(day.getDate() - 1);
-
-        intervals.push(previousDay);
-        intervals.push(day);
-      }
-    }
-    if (intervals.length % 2 !== 2) {
-      intervals.push(endDate);
-    }
-
-    let result = [];
-    for (let i = 0; i < intervals.length; i += 2) {
-      result.push(new Month(intervals[i], intervals[i + 1]));
-    }
-    return result;
-  }
-
-  private static getDaysBetween(start: Date, end: Date): Date[] {
-    let arr = [];
-    for (let dt = new Date(start); dt <= end; dt.setDate(dt.getDate() + 1)) {
-      arr.push(new Date(dt));
-    }
-    return arr;
-  }
-
-  getDateClassLambda(): (d: Date) => string {
-    return (d: Date) => {
-      if (!this.railml || !this.railml.startDate || !this.selectedOp) {
-        return undefined;
-      }
-      let diff = this.dateDiffInDays(this.railml.startDate, d);
-      return (this.selectedOp.bitMask !== undefined && this.selectedOp.bitMask.charAt(diff) === '1') ? 'highlighted-date' : undefined;
-    };
-  }
-
   setOp(op: OperatingPeriod) {
     this.selectedOp = op;
-    this.dateClassLambda = this.getDateClassLambda();
-    for (let calendar of this.calendarElements) {
-      calendar.updateTodaysDate();
-    }
+    this.opCalendarService.selectOp(op);
   }
 
   fileBrowserHandler(files: FileList) {

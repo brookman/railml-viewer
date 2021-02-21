@@ -73,7 +73,7 @@ export interface IOperatingPeriod {
 }
 
 export interface ITrainParts {
-  trainPart: ITrainPart|ITrainPart[];
+  trainPart: ITrainPart | ITrainPart[];
 }
 
 export interface ITrainPart {
@@ -96,7 +96,7 @@ export interface IOperatingPeriodRef {
 }
 
 export interface IOcpsTT {
-  ocpTT: IOcpTT|IOcpTT[];
+  ocpTT: IOcpTT | IOcpTT[];
 }
 
 export interface IOcpTT {
@@ -106,7 +106,7 @@ export interface IOcpTT {
     sequence: string,
     trackInfo: string,
   }
-  times: ITime|ITime[];
+  times: ITime | ITime[];
 }
 
 export interface ITime {
@@ -118,7 +118,7 @@ export interface ITime {
 }
 
 export interface ITrains {
-  train: ITrain|ITrain[];
+  train: ITrain | ITrain[];
 }
 
 type TrainTypeString = "operational" | "commercial";
@@ -239,6 +239,20 @@ export class OperatingPeriod {
     this.name = iOperatingPeriod.attributes.name;
     this.description = iOperatingPeriod.attributes.description;
     this.bitMask = iOperatingPeriod.attributes.bitMask;
+  }
+
+  public getBit(date: Date): boolean {
+    let diff = OperatingPeriod.dateDiffInDays(this.startDate, date);
+    return this.bitMask?.charAt(diff) === '1';
+  }
+
+  private static dateDiffInDays(a: Date, b: Date) {
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+    // Discard the time and time-zone information.
+    const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+    const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+
+    return Math.floor((utc2 - utc1) / MS_PER_DAY);
   }
 }
 
