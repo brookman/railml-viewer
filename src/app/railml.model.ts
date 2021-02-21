@@ -12,7 +12,7 @@ export interface IInfrastructure {
 }
 
 export interface IOperationControlPoints {
-  ocp: IOcp[];
+  ocp: IOcp | IOcp[];
 }
 
 export interface IOcp {
@@ -46,7 +46,7 @@ export interface ITimetable {
 }
 
 export interface ITimetablePeriods {
-  timetablePeriod: ITimetablePeriod; // []
+  timetablePeriod: ITimetablePeriod | ITimetablePeriod[];
 }
 
 export interface ITimetablePeriod {
@@ -60,7 +60,7 @@ export interface ITimetablePeriod {
 }
 
 export interface IOperatingPeriods {
-  operatingPeriod: IOperatingPeriod[];
+  operatingPeriod: IOperatingPeriod | IOperatingPeriod[];
 }
 
 export interface IOperatingPeriod {
@@ -73,7 +73,7 @@ export interface IOperatingPeriod {
 }
 
 export interface ITrainParts {
-  trainPart: ITrainPart[];
+  trainPart: ITrainPart|ITrainPart[];
 }
 
 export interface ITrainPart {
@@ -96,7 +96,7 @@ export interface IOperatingPeriodRef {
 }
 
 export interface IOcpsTT {
-  ocpTT: IOcpTT[];
+  ocpTT: IOcpTT|IOcpTT[];
 }
 
 export interface IOcpTT {
@@ -106,7 +106,7 @@ export interface IOcpTT {
     sequence: string,
     trackInfo: string,
   }
-  times: ITime[];
+  times: ITime|ITime[];
 }
 
 export interface ITime {
@@ -118,7 +118,7 @@ export interface ITime {
 }
 
 export interface ITrains {
-  train: ITrain[];
+  train: ITrain|ITrain[];
 }
 
 type TrainTypeString = "operational" | "commercial";
@@ -259,7 +259,7 @@ export class TrainPart {
     this.op = op;
 
     // OcpTTs
-    for (let iOcpTT of iTrainPart.ocpsTT.ocpTT) {
+    for (let iOcpTT of Util.toArray(iTrainPart.ocpsTT.ocpTT)) {
       let ocp = ocps.get(iOcpTT.attributes.ocpRef);
       let ocpTT = new OcpTT(iOcpTT, ocp);
       this.ocpTTs.push(ocpTT);
@@ -271,7 +271,7 @@ export class TrainPart {
   }
 
   get fromCode(): string {
-    return this.ocpTTs[0].ocp.code || '?';
+    return this.ocpTTs[0].ocp.code || this.from.substr(0, 4);
   }
 
   get to(): string {
@@ -279,7 +279,7 @@ export class TrainPart {
   }
 
   get toCode(): string {
-    return this.ocpTTs[this.ocpTTs.length - 1].ocp.code || '?';;
+    return this.ocpTTs[this.ocpTTs.length - 1].ocp.code || this.to.substr(0, 4);
   }
 }
 
@@ -447,32 +447,31 @@ export class Railml {
   trains = new Map<string, Train>();
 
   constructor(iRailmlDocument: IRailmlDocument) {
-    let attrs = iRailmlDocument.railml.timetable.timetablePeriods.timetablePeriod.attributes;
-    this.startDate = new Date(attrs.startDate);
-    this.endDate = new Date(attrs.endDate);
+    let iTimetablePeriod = Util.toArray(iRailmlDocument.railml.timetable.timetablePeriods.timetablePeriod)[0]; // there should be exactly one
+    this.startDate = new Date(iTimetablePeriod.attributes.startDate);
+    this.endDate = new Date(iTimetablePeriod.attributes.endDate);
 
     // OCPs
-    for (let iocp of iRailmlDocument.railml.infrastructure.operationControlPoints.ocp) {
+    for (let iocp of Util.toArray(iRailmlDocument.railml.infrastructure.operationControlPoints.ocp)) {
       let ocp = new Ocp(iocp);
       this.ocps.set(ocp.id, ocp);
     }
 
     // OPs
-    let iTimetablePeriod = iRailmlDocument.railml.timetable.timetablePeriods.timetablePeriod;
-    for (let iop of iRailmlDocument.railml.timetable.operatingPeriods.operatingPeriod) {
+    for (let iop of Util.toArray(iRailmlDocument.railml.timetable.operatingPeriods.operatingPeriod)) {
       let op = new OperatingPeriod(iTimetablePeriod, iop);
       this.ops.set(op.id, op);
     }
 
     // TrainParts
-    for (let itp of iRailmlDocument.railml.timetable.trainParts.trainPart) {
+    for (let itp of Util.toArray(iRailmlDocument.railml.timetable.trainParts.trainPart)) {
       let op = this.ops.get(itp.operatingPeriodRef.attributes.ref);
       let tp = new TrainPart(itp, op, this.ocps);
       this.trainParts.set(tp.id, tp);
     }
 
     // Trains
-    for (let itrain of iRailmlDocument.railml.timetable.trains.train) {
+    for (let itrain of Util.toArray(iRailmlDocument.railml.timetable.trains.train)) {
       let train = new Train(itrain, this.trainParts);
       this.trains.set(train.id, train);
     }
