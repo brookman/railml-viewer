@@ -6,8 +6,8 @@ import {MatSort} from "@angular/material/sort";
 import {BehaviorSubject} from "rxjs";
 import {debounceTime, filter} from "rxjs/operators";
 import {MatPaginator} from "@angular/material/paginator";
-import {GoogleMap} from "@angular/google-maps";
 import {OpCalendarService} from "./op-calendar/op-calendar.service";
+import {GooglemapComponent} from "./googlemap/googlemap.component";
 
 export interface LeaderLine {
   remove();
@@ -49,18 +49,12 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
   @ViewChildren('tpElementCo') tpElementsCo: QueryList<ElementRef>;
   @ViewChildren('tpElementOp') tpElementsOp: QueryList<ElementRef>;
 
-  @ViewChild(GoogleMap) map: GoogleMap;
+  @ViewChild(GooglemapComponent) map: GooglemapComponent;
 
   lines: LeaderLine[] = [];
 
   reDrawLines = false;
   updateLines: BehaviorSubject<Object> = new BehaviorSubject<Object>(1);
-
-  mapOptions: google.maps.MapOptions = {
-    center: {lat: 46.7307146911459, lng: 10.11897810703834},
-    zoom: 9
-  };
-  stations: { lat: number, lng: number, code: string, name: string }[] = [];
 
   visibleTrainParts: TrainPart[] = [];
 
@@ -173,56 +167,6 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
       });
   }
 
-  selectTrain(train: Train) {
-    this.stations = [];
-    // for (let ocp of this.railml.ocps.values()) {
-    //   this.stationCircles.push({lat: ocp.lat, lng: ocp.lon});
-    // }
-
-    let latlngbounds = new google.maps.LatLngBounds();
-
-    for (let tp of train.trainParts) {
-      for (let ocpTT of tp.trainPart.ocpTTs) {
-        if (ocpTT.ocpType === "stop") {
-          let ocp = ocpTT.ocp;
-          this.stations.push({
-            lat: ocp.lat,
-            lng: ocp.lon,
-            code: ocp.code,
-            name: ocp.name
-          });
-          latlngbounds.extend({lat: ocp.lat, lng: ocp.lon});
-        }
-      }
-    }
-
-    this.map.fitBounds(latlngbounds);
-  }
-
-  selectTrainPart(trainPart: TrainPart) {
-    this.stations = [];
-    // for (let ocp of this.railml.ocps.values()) {
-    //   this.stationCircles.push({lat: ocp.lat, lng: ocp.lon});
-    // }
-
-    let latlngbounds = new google.maps.LatLngBounds();
-
-    for (let ocpTT of trainPart.ocpTTs) {
-      if (ocpTT.ocpType === "stop") {
-        let ocp = ocpTT.ocp;
-        this.stations.push({
-          lat: ocp.lat,
-          lng: ocp.lon,
-          code: ocp.code,
-          name: ocp.name
-        });
-        latlngbounds.extend({lat: ocp.lat, lng: ocp.lon});
-      }
-    }
-
-
-    this.map.fitBounds(latlngbounds);
-  }
 
   getKeys(map) {
     return Array.from(map.keys());

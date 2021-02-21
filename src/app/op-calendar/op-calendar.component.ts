@@ -1,5 +1,4 @@
 import {Component, OnInit, QueryList, ViewChildren} from '@angular/core';
-import {OperatingPeriod} from "../railml.model";
 import {MatCalendar} from "@angular/material/datepicker";
 import {Calendar, OpCalendarService} from "./op-calendar.service";
 

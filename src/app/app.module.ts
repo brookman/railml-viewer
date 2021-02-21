@@ -51,11 +51,13 @@ import {MondayFirstDateAdapter} from "./utils";
 import {FlexLayoutModule} from "@angular/flex-layout";
 import {GoogleMapsModule} from "@angular/google-maps";
 import { OpCalendarComponent } from './op-calendar/op-calendar.component';
+import { GooglemapComponent } from './googlemap/googlemap.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    OpCalendarComponent
+    OpCalendarComponent,
+    GooglemapComponent
   ],
   imports: [
     BrowserModule,

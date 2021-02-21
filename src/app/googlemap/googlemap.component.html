@@ -1,0 +1,16 @@
+<mat-card>
+  <mat-card-title>Map</mat-card-title>
+  <mat-card-content>
+    <google-map [options]="mapOptions" width="100%">
+      <!--          <map-circle *ngFor="let stationCircle of stationCircles" [center]="stationCircle" [radius]="250"></map-circle>-->
+      <map-polyline [path]="stations" [options]="{strokeColor:'#ff0000'}"></map-polyline>
+      <map-marker *ngFor="let station of stations"
+                  [position]="station"
+                  [title]="station.name"
+                  [label]="station.code"
+                  [clickable]="true"
+                  [options]="{draggable: false}"></map-marker>
+      <!--          <map-transit-layer></map-transit-layer>-->
+    </google-map>
+  </mat-card-content>
+</mat-card>
