@@ -1,23 +1,7 @@
 <div fxLayout="row" fxFlex="flex-grow" fxLayoutAlign="space-between" fxLayoutGap="12px" [style.margin-top]="'12px'" [style.margin-left]="'12px'" [style.margin-right]="'12px'" fxFlexFill>
   <div fxFlex="flex-grow" fxLayout="column" fxLayoutGap="12px">
-    <div class="dropzone">
-      <input type="file" #fileDropRef id="fileDropRef" (change)="fileBrowserHandler($event.target.files)"/>
-      <h2>Your railML.xml here</h2>
-      <p>
-        <mat-icon>local_fire_department</mat-icon>
-        Drop it like it's hot!
-        <mat-icon>local_fire_department</mat-icon>
-      </p>
-      <div class="railml-info" *ngIf="railml">
-        <ul>
-          <li>RailML: {{fileName}}</li>
-          <li>Date range: {{railml.startDate | date:'dd.MM.yyyy'}} - {{railml.endDate | date:'dd.MM.yyyy'}}</li>
-          <li>Number of trains: {{railml.trains.size}}</li>
-          <li>Number of train parts: {{railml.trainParts.size}}</li>
-          <li>Number of operating periods: {{railml.ops.size}}</li>
-        </ul>
-      </div>
-    </div>
+
+    <dropzone></dropzone>
 
     <mat-card>
       <mat-card-title>Trains</mat-card-title>

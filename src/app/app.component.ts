@@ -28,7 +28,7 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
   title = 'railml-viewer';
 
   railml: Railml;
-  fileName = "";
+
   dataSource = new MatTableDataSource([]);
   dataSource2 = new MatTableDataSource([]);
   displayedColumns: string[] = ['trainNumber', 'name', 'type', 'complexity', 'sequences'];
@@ -260,12 +260,5 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
   setOp(op: OperatingPeriod) {
     this.selectedOp = op;
     this.opCalendarService.selectOp(op);
-  }
-
-  fileBrowserHandler(files: FileList) {
-    files[0].text().then(content => {
-      this.fileName = files[0].name;
-      this.railmlParserService.emitRailmlFromContent(content);
-    });
   }
 }
