@@ -82,8 +82,8 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
           if (railml) {
             console.log(railml);
             this.railml = railml;
-            this.dataSource.data = this.getTrains();
-            this.dataSource2.data = this.getTrains();
+            this.dataSource.data = this.getTrains(TrainType.COMMERCIAL);
+            this.dataSource2.data = this.getTrains(TrainType.OPERATIONAL);
             this.reDrawLines = true;
           }
         },
@@ -98,14 +98,16 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
     this.updateLines
       .pipe(
         filter(_ => this.reDrawLines),
-        debounceTime(200))
+        debounceTime(300))
       .subscribe(_ => {
-        if (this.lines.length > 0) {
-          for (let line of this.lines) {
-            line.remove();
-          }
-          this.lines = [];
+        console.log("draw lines");
+        this.regenerateVisibleTrainParts();
+
+        for (let line of this.lines) {
+          line.remove();
         }
+        this.lines = [];
+
         if (this.tpElements) {
           let mapTp = new Map<string, ElementRef>();
           let mapTpCo = new Map<string, ElementRef>();
@@ -172,13 +174,15 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
     return Array.from(map.keys());
   }
 
-  getTrains(): Train[] {
+  getTrains(trainType?: TrainType): Train[] {
     let result: Train[] = [];
     if (this.railml) {
-      result = Array.from(this.railml.trains.values());
-
+      result = [...this.railml.trains.values()];
+      if (trainType) {
+        result = result.filter(train => train.type === trainType);
+      }
     }
-    // result.sort((a, b) => a.trainNumber.localeCompare(b.trainNumber));
+    result.sort((a, b) => a.trainNumber.localeCompare(b.trainNumber));
     return result;
   }
 
@@ -229,12 +233,13 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
 
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
+    this.filter = filterValue.trim().toLowerCase();
 
     this.directMatch.clear();
     this.relatedMatch.clear();
 
     for (let train of this.getTrains()) {
-      if (train.trainNumber.startsWith(filterValue)) {
+      if (train.trainNumber.startsWith(this.filter)) {
         this.directMatch.add(train);
         for (let relatedTrain of train.getRelatedTrainsRecursively()) {
           this.relatedMatch.add(relatedTrain);
@@ -242,23 +247,29 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
       }
     }
 
-    this.filter = filterValue.trim().toLowerCase();
     this.dataSource.filter = this.filter;
     this.dataSource2.filter = this.filter;
     this.reDrawLines = true;
+  }
 
+  setOp(op: OperatingPeriod) {
+    this.selectedOp = op;
+    this.opCalendarService.selectOp(op);
+  }
+
+  onSortChange($event: any) {
+    console.log('onSortChange', $event);
+    this.reDrawLines = true;
+  }
+
+  private regenerateVisibleTrainParts() {
     this.visibleTrainParts = [];
-    for (let train of this.relatedMatch) {
+    for (let train of this.dataSource.filteredData) {
       if (train.type === TrainType.COMMERCIAL) {
         for (let trainPart of train.trainParts) {
           this.visibleTrainParts.push(trainPart.trainPart);
         }
       }
     }
-  }
-
-  setOp(op: OperatingPeriod) {
-    this.selectedOp = op;
-    this.opCalendarService.selectOp(op);
   }
 }

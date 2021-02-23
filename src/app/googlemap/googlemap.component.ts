@@ -40,7 +40,7 @@ export class GooglemapComponent implements OnInit {
 
   private appendStops(trainPart: TrainPart) {
     for (let ocpTT of trainPart.ocpTTs) {
-      if (ocpTT.ocpType === "stop") {
+      if (ocpTT.ocpType === 'stop') {
         let ocp = ocpTT.ocp;
         this.stations.push({
           lat: ocp.lat,

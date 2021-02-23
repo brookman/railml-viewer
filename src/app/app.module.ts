@@ -53,13 +53,19 @@ import {GoogleMapsModule} from "@angular/google-maps";
 import { OpCalendarComponent } from './op-calendar/op-calendar.component';
 import { GooglemapComponent } from './googlemap/googlemap.component';
 import { DropzoneComponent } from './dropzone/dropzone.component';
+import { RailFilterComponent } from './rail-filter/rail-filter.component';
+import { TrainPartListComponent } from './train-part-list/train-part-list.component';
+import { TrainViewComponent } from './train-view/train-view.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     OpCalendarComponent,
     GooglemapComponent,
-    DropzoneComponent
+    DropzoneComponent,
+    RailFilterComponent,
+    TrainPartListComponent,
+    TrainViewComponent
   ],
   imports: [
     BrowserModule,

@@ -263,7 +263,13 @@ export class TrainPart {
   line: string;
   op: OperatingPeriod;
   ocpTTs: OcpTT[] = [];
+  stops: OcpTT[] = [];
   referencedBy: Set<Train> = new Set();
+
+  ocpTTList: string;
+  stopList: string;
+  commercialUses: string;
+  operationalUses: string;
 
   constructor(iTrainPart: ITrainPart, op: OperatingPeriod, ocps: Map<string, Ocp>) {
     this.id = iTrainPart.attributes.id;
@@ -278,6 +284,27 @@ export class TrainPart {
       let ocpTT = new OcpTT(iOcpTT, ocp);
       this.ocpTTs.push(ocpTT);
     }
+
+    this.stops = this.ocpTTs
+      .filter(ocpTT => ocpTT.ocpType === 'stop');
+
+    this.ocpTTList = this.ocpTTs
+      .map(o => o.ocp.code + ' - ' + o.ocp.name)
+      .join('\n');
+
+    this.stopList = this.stops
+      .map(o => o.ocp.code + ' - ' + o.ocp.name)
+      .join('\n');
+
+    this.commercialUses = [...this.referencedBy]
+      .filter(t => t.type === TrainType.COMMERCIAL)
+      .map(t => t.trainNumber)
+      .join(' ');
+
+    this.operationalUses = [...this.referencedBy]
+      .filter(t => t.type === TrainType.OPERATIONAL)
+      .map(t => t.trainNumber)
+      .join(' ');
   }
 
   get from(): string {
@@ -294,6 +321,10 @@ export class TrainPart {
 
   get toCode(): string {
     return this.ocpTTs[this.ocpTTs.length - 1].ocp.code || this.to.substr(0, 4);
+  }
+
+  get timesReferenced(): number {
+    return this.referencedBy.size;
   }
 }
 
@@ -321,6 +352,7 @@ export class Train {
   trainPartSequences: TrainPartSequence[] = [];
   trainParts: TrainPartRefFlat[] = [];
   relatedTrains: Set<Train> = new Set();
+  relatedTrainsRecursive: Set<Train> = new Set();
   complexitySelf = 0;
 
   constructor(iTrain: ITrain, trainParts: Map<string, TrainPart>) {
@@ -509,6 +541,11 @@ export class Railml {
         }
       }
       train.relatedTrains.delete(train); // remove self
+    }
+
+    for (let train of this.trains.values()) {
+      train.relatedTrainsRecursive = train.getRelatedTrainsRecursively();
+      train.relatedTrainsRecursive.delete(train); // remove self
     }
   }
 }

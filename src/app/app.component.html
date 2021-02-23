@@ -3,145 +3,156 @@
 
     <dropzone></dropzone>
 
-    <mat-card>
-      <mat-card-title>Trains</mat-card-title>
-      <mat-card-content fxLayout="column">
+    <mat-tab-group>
+      <mat-tab label="Train parts">
 
-        <mat-form-field>
-          <mat-label>Filter by train number</mat-label>
-          <input matInput (keyup)="applyFilter($event)" placeholder="1234" #input>
-        </mat-form-field>
+        <train-part-list></train-part-list>
 
-        <div fxLayout="row">
-          <table style="width:45%" mat-table matSort [dataSource]="dataSource" class="mat-elevation-z0">
+      </mat-tab>
+      <mat-tab label="Trains">
 
-            <ng-container matColumnDef="trainNumber">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>Number</th>
-              <td mat-cell *matCellDef="let train" style="background-color:{{getTrainColor(train)}}">
-                <strong *ngIf="highlightTrain(train)" (click)="map.selectTrain(train)" style="cursor: pointer;">{{train.trainNumber}}</strong>
-                <p *ngIf="!highlightTrain(train)" (click)="map.selectTrain(train)" style="cursor: pointer;">{{train.trainNumber}}</p>
-              </td>
-            </ng-container>
+        <mat-card>
+          <mat-card-title>Trains</mat-card-title>
+          <mat-card-content fxLayout="column">
 
-            <ng-container matColumnDef="type">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>Type</th>
-              <td mat-cell *matCellDef="let train" style="background-color:{{getTrainColor(train)}}">{{train.type}}</td>
-            </ng-container>
+            <mat-form-field>
+              <mat-label>Filter by train number</mat-label>
+              <input matInput (keyup)="applyFilter($event)" placeholder="1234" #input>
+            </mat-form-field>
 
-            <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
-              <td mat-cell *matCellDef="let tain" style="background-color:{{getTrainColor(tain)}}">{{tain.name}}</td>
-            </ng-container>
+            <div fxLayout="row">
+              <table style="width:45%" mat-table matSort [dataSource]="dataSource" (matSortChange)="onSortChange($event)" class="mat-elevation-z0">
 
-            <ng-container matColumnDef="complexity">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>Complexity</th>
-              <td mat-cell *matCellDef="let train" style="background-color:{{getTrainColor(train)}}">{{train.complexity}}</td>
-            </ng-container>
+                <ng-container matColumnDef="trainNumber">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Number</th>
+                  <td mat-cell *matCellDef="let train" style="background-color:{{getTrainColor(train)}}">
+                    <strong *ngIf="highlightTrain(train)" (click)="map.selectTrain(train)" style="cursor: pointer;">{{train.trainNumber}}</strong>
+                    <p *ngIf="!highlightTrain(train)" (click)="map.selectTrain(train)" style="cursor: pointer;">{{train.trainNumber}}</p>
+                  </td>
+                </ng-container>
 
-            <ng-container matColumnDef="sequences">
-              <th mat-header-cell *matHeaderCellDef>Sequences and train parts</th>
-              <td mat-cell *matCellDef="let train">
+                <ng-container matColumnDef="type">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Type</th>
+                  <td mat-cell *matCellDef="let train" style="background-color:{{getTrainColor(train)}}">{{train.type}}</td>
+                </ng-container>
 
-                <table>
-                  <ng-container *ngFor="let tpRef of train.trainParts">
-                    <tr>
-                      <td *ngIf="tpRef.span > 0" [attr.rowspan]="tpRef.span" style="width:50px;background:{{sequenceToColor(tpRef.sequence)}}">{{tpRef.sequence}}</td>
-                      <td style="width:15px;background:{{sequenceToColor(tpRef.position)}}" [attr.data-tpid]="tpRef.trainPart.id" #tpElementCo>{{tpRef.position}}</td>
-                      <!--                      <td style="width:120px;background:{{trainPartToColor(tpRef.trainPart)}}" matTooltip="{{tpRef.trainPart.from + ' - ' + tpRef.trainPart.to}} ({{tpRef.trainPart.id}})"-->
-                      <!--                          (click)="selectTrainPart(tpRef.trainPart)">-->
-                      <!--                        {{tpRef.trainPart.fromCode + ' - ' + tpRef.trainPart.toCode}}</td>-->
-                      <!--                      <td style="width:100px;background:{{operatingPeriodToColor(tpRef.trainPart.op)}}">-->
-                      <!--                        <div (click)="setOp(tpRef.trainPart.op)" style="cursor: pointer;">-->
-                      <!--                          OP: {{tpRef.trainPart.op === selectedOp ? ('> ' + tpRef.trainPart.op.name + ' <') : tpRef.trainPart.op.name  }}-->
-                      <!--                        </div>-->
-                      <!--                      </td>-->
-                    </tr>
-                  </ng-container>
-                </table>
+                <ng-container matColumnDef="name">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+                  <td mat-cell *matCellDef="let tain" style="background-color:{{getTrainColor(tain)}}">{{tain.name}}</td>
+                </ng-container>
 
-              </td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-          </table>
+                <ng-container matColumnDef="complexity">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Complexity</th>
+                  <td mat-cell *matCellDef="let train" style="background-color:{{getTrainColor(train)}}">{{train.complexity}}</td>
+                </ng-container>
 
-          <table style="width:10%" class="mat-elevation-z0">
-            <th style="height:53px" class="mat-header-cell">Train part & OP</th>
-            <ng-container *ngFor="let trainPart of visibleTrainParts">
-              <tr [attr.data-tpid]="trainPart.id" #tpElement>
-                <td style="width:120px;cursor: pointer;background:{{trainPartToColor(trainPart)}}" matTooltip="{{trainPart.from + ' - ' + trainPart.to}} ({{trainPart.id}})"
-                    (click)="map.selectTrainPart(trainPart)">
-                  {{trainPart.fromCode + ' - ' + trainPart.toCode}}</td>
+                <ng-container matColumnDef="sequences">
+                  <th mat-header-cell *matHeaderCellDef>Sequences and train parts</th>
+                  <td mat-cell *matCellDef="let train">
 
-                <td style="width:60px;background:{{operatingPeriodToColor(trainPart.op)}}">
-                  <div (click)="setOp(trainPart.op)" style="cursor: pointer;">
-                    <strong *ngIf="trainPart.op === selectedOp">OP: {{trainPart.op.name}}</strong>
-                    <span *ngIf="trainPart.op !== selectedOp">OP: {{trainPart.op.name}}</span>
-                  </div>
-                </td>
-              </tr>
-            </ng-container>
-          </table>
+                    <table>
+                      <ng-container *ngFor="let tpRef of train.trainParts">
+                        <tr>
+                          <td *ngIf="tpRef.span > 0" [attr.rowspan]="tpRef.span" style="width:50px;background:{{sequenceToColor(tpRef.sequence)}}">{{tpRef.sequence}}</td>
+                          <td style="width:15px;background:{{sequenceToColor(tpRef.position)}}" [attr.data-tpid]="tpRef.trainPart.id" #tpElementCo>{{tpRef.position}}</td>
+                          <!--                      <td style="width:120px;background:{{trainPartToColor(tpRef.trainPart)}}" matTooltip="{{tpRef.trainPart.from + ' - ' + tpRef.trainPart.to}} ({{tpRef.trainPart.id}})"-->
+                          <!--                          (click)="selectTrainPart(tpRef.trainPart)">-->
+                          <!--                        {{tpRef.trainPart.fromCode + ' - ' + tpRef.trainPart.toCode}}</td>-->
+                          <!--                      <td style="width:100px;background:{{operatingPeriodToColor(tpRef.trainPart.op)}}">-->
+                          <!--                        <div (click)="setOp(tpRef.trainPart.op)" style="cursor: pointer;">-->
+                          <!--                          OP: {{tpRef.trainPart.op === selectedOp ? ('> ' + tpRef.trainPart.op.name + ' <') : tpRef.trainPart.op.name  }}-->
+                          <!--                        </div>-->
+                          <!--                      </td>-->
+                        </tr>
+                      </ng-container>
+                    </table>
 
-          <table style="width:45%" mat-table matSort [dataSource]="dataSource2" class="mat-elevation-z0">
+                  </td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+              </table>
 
-            <ng-container matColumnDef="sequences">
-              <th mat-header-cell *matHeaderCellDef>Sequences and train parts</th>
-              <td mat-cell *matCellDef="let train" fxLayout="row-reverse">
+              <table style="width:10%" class="mat-elevation-z0">
+                <th style="height:53px" class="mat-header-cell">Train part & OP</th>
+                <ng-container *ngFor="let trainPart of visibleTrainParts">
+                  <tr [attr.data-tpid]="trainPart.id" #tpElement>
+                    <td style="width:120px;cursor: pointer;background:{{trainPartToColor(trainPart)}}" matTooltip="{{trainPart.from + ' - ' + trainPart.to}} ({{trainPart.id}})"
+                        (click)="map.selectTrainPart(trainPart)">
+                      {{trainPart.fromCode + ' - ' + trainPart.toCode}}</td>
 
-                <table>
-                  <ng-container *ngFor="let tpRef of train.trainParts">
-                    <tr>
-                      <!--                      <td style="width:100px;background:{{operatingPeriodToColor(tpRef.trainPart.op)}}">-->
-                      <!--                        <div (click)="setOp(tpRef.trainPart.op)" style="cursor: pointer;">-->
-                      <!--                          OP: {{tpRef.trainPart.op === selectedOp ? ('> ' + tpRef.trainPart.op.name + ' <') : tpRef.trainPart.op.name  }}-->
-                      <!--                        </div>-->
-                      <!--                      </td>-->
-                      <!--                      <td style="width:120px;background:{{trainPartToColor(tpRef.trainPart)}}" matTooltip="{{tpRef.trainPart.from + ' - ' + tpRef.trainPart.to}} ({{tpRef.trainPart.id}})"-->
-                      <!--                          (click)="selectTrainPart(tpRef.trainPart)">-->
-                      <!--                        {{tpRef.trainPart.fromCode + ' - ' + tpRef.trainPart.toCode}}</td>-->
-                      <td style="width:15px;background:{{sequenceToColor(tpRef.position)}}" [attr.data-tpid]="tpRef.trainPart.id" #tpElementOp>{{tpRef.position}}</td>
-                      <td *ngIf="tpRef.span > 0" [attr.rowspan]="tpRef.span" style="width:50px;background:{{sequenceToColor(tpRef.sequence)}}">{{tpRef.sequence}}</td>
-                    </tr>
-                  </ng-container>
-                </table>
+                    <td style="width:60px;background:{{operatingPeriodToColor(trainPart.op)}}">
+                      <div (click)="setOp(trainPart.op)" style="cursor: pointer;">
+                        <strong *ngIf="trainPart.op === selectedOp">OP: {{trainPart.op.name}}</strong>
+                        <span *ngIf="trainPart.op !== selectedOp">OP: {{trainPart.op.name}}</span>
+                      </div>
+                    </td>
+                  </tr>
+                </ng-container>
+              </table>
 
-              </td>
-            </ng-container>
+              <table style="width:45%" mat-table matSort [dataSource]="dataSource2" class="mat-elevation-z0">
 
-            <ng-container matColumnDef="trainNumber">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>Number</th>
-              <td mat-cell *matCellDef="let train" style="background-color:{{getTrainColor(train)}}">
-                <strong *ngIf="highlightTrain(train)" (click)="map.selectTrain(train)" style="cursor: pointer;">{{train.trainNumber}}</strong>
-                <p *ngIf="!highlightTrain(train)" (click)="map.selectTrain(train)" style="cursor: pointer;">{{train.trainNumber}}</p>
-              </td>
-            </ng-container>
+                <ng-container matColumnDef="sequences">
+                  <th mat-header-cell *matHeaderCellDef>Sequences and train parts</th>
+                  <td mat-cell *matCellDef="let train" fxLayout="row-reverse">
 
-            <ng-container matColumnDef="type">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>Type</th>
-              <td mat-cell *matCellDef="let train" style="background-color:{{getTrainColor(train)}}">{{train.type}}</td>
-            </ng-container>
+                    <table>
+                      <ng-container *ngFor="let tpRef of train.trainParts">
+                        <tr>
+                          <!--                      <td style="width:100px;background:{{operatingPeriodToColor(tpRef.trainPart.op)}}">-->
+                          <!--                        <div (click)="setOp(tpRef.trainPart.op)" style="cursor: pointer;">-->
+                          <!--                          OP: {{tpRef.trainPart.op === selectedOp ? ('> ' + tpRef.trainPart.op.name + ' <') : tpRef.trainPart.op.name  }}-->
+                          <!--                        </div>-->
+                          <!--                      </td>-->
+                          <!--                      <td style="width:120px;background:{{trainPartToColor(tpRef.trainPart)}}" matTooltip="{{tpRef.trainPart.from + ' - ' + tpRef.trainPart.to}} ({{tpRef.trainPart.id}})"-->
+                          <!--                          (click)="selectTrainPart(tpRef.trainPart)">-->
+                          <!--                        {{tpRef.trainPart.fromCode + ' - ' + tpRef.trainPart.toCode}}</td>-->
+                          <td style="width:15px;background:{{sequenceToColor(tpRef.position)}}" [attr.data-tpid]="tpRef.trainPart.id" #tpElementOp>{{tpRef.position}}</td>
+                          <td *ngIf="tpRef.span > 0" [attr.rowspan]="tpRef.span" style="width:50px;background:{{sequenceToColor(tpRef.sequence)}}">{{tpRef.sequence}}</td>
+                        </tr>
+                      </ng-container>
+                    </table>
 
-            <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
-              <td mat-cell *matCellDef="let tain" style="background-color:{{getTrainColor(tain)}}">{{tain.name}}</td>
-            </ng-container>
+                  </td>
+                </ng-container>
 
-            <ng-container matColumnDef="complexity">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>Complexity</th>
-              <td mat-cell *matCellDef="let train" style="background-color:{{getTrainColor(train)}}">{{train.complexity}}</td>
-            </ng-container>
+                <ng-container matColumnDef="trainNumber">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Number</th>
+                  <td mat-cell *matCellDef="let train" style="background-color:{{getTrainColor(train)}}">
+                    <strong *ngIf="highlightTrain(train)" (click)="map.selectTrain(train)" style="cursor: pointer;">{{train.trainNumber}}</strong>
+                    <p *ngIf="!highlightTrain(train)" (click)="map.selectTrain(train)" style="cursor: pointer;">{{train.trainNumber}}</p>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="type">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Type</th>
+                  <td mat-cell *matCellDef="let train" style="background-color:{{getTrainColor(train)}}">{{train.type}}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="name">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+                  <td mat-cell *matCellDef="let tain" style="background-color:{{getTrainColor(tain)}}">{{tain.name}}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="complexity">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Complexity</th>
+                  <td mat-cell *matCellDef="let train" style="background-color:{{getTrainColor(train)}}">{{train.complexity}}</td>
+                </ng-container>
 
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns2"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns2;"></tr>
-          </table>
-        </div>
+                <tr mat-header-row *matHeaderRowDef="displayedColumns2"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns2;"></tr>
+              </table>
+            </div>
 
-        <mat-paginator [pageSizeOptions]="[20, 150, 5000]" showFirstLastButtons></mat-paginator>
+            <mat-paginator [pageSizeOptions]="[20, 150, 5000]" showFirstLastButtons></mat-paginator>
 
-      </mat-card-content>
-    </mat-card>
+          </mat-card-content>
+        </mat-card>
+
+      </mat-tab>
+    </mat-tab-group>
 
     <googlemap></googlemap>
 
