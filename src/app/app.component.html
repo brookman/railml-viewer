@@ -3,6 +3,8 @@
 
     <dropzone></dropzone>
 
+    <rail-filter></rail-filter>
+
     <mat-tab-group>
       <mat-tab label="Train parts">
 
@@ -82,7 +84,7 @@
                       {{trainPart.fromCode + ' - ' + trainPart.toCode}}</td>
 
                     <td style="width:60px;background:{{operatingPeriodToColor(trainPart.op)}}">
-                      <div (click)="setOp(trainPart.op)" style="cursor: pointer;">
+                      <div (click)="setOp(trainPart.op, $event)" style="cursor: pointer;">
                         <strong *ngIf="trainPart.op === selectedOp">OP: {{trainPart.op.name}}</strong>
                         <span *ngIf="trainPart.op !== selectedOp">OP: {{trainPart.op.name}}</span>
                       </div>

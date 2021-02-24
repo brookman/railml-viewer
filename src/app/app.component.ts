@@ -252,9 +252,14 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
     this.reDrawLines = true;
   }
 
-  setOp(op: OperatingPeriod) {
+  setOp(op: OperatingPeriod, $event:any) {
     this.selectedOp = op;
-    this.opCalendarService.selectOp(op);
+    if ($event.shiftKey) {
+      console.log('toggle');
+      this.opCalendarService.selectOp(op);
+    } else {
+      this.opCalendarService.selectOp(op);
+    }
   }
 
   onSortChange($event: any) {

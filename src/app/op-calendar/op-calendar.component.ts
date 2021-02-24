@@ -35,7 +35,7 @@ export class OpCalendarComponent implements OnInit {
       if (!this.calendar?.months.length || !this.calendar.selectedOp) {
         return undefined;
       }
-      return this.calendar.selectedOp.getBit(d) ? 'highlighted-date' : undefined;
+      return this.calendar.selectedOp?.getBit(d) ? 'highlighted-date' : undefined;
     };
   }
 }

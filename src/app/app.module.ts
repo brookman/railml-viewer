@@ -56,6 +56,7 @@ import { DropzoneComponent } from './dropzone/dropzone.component';
 import { RailFilterComponent } from './rail-filter/rail-filter.component';
 import { TrainPartListComponent } from './train-part-list/train-part-list.component';
 import { TrainViewComponent } from './train-view/train-view.component';
+import {ReactiveFormsModule} from "@angular/forms";
 
 @NgModule({
   declarations: [
@@ -73,6 +74,8 @@ import { TrainViewComponent } from './train-view/train-view.component';
     HttpClientModule,
 
     GoogleMapsModule,
+
+    ReactiveFormsModule,
 
     A11yModule,
     ClipboardModule,

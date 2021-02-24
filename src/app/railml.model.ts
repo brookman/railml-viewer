@@ -232,13 +232,24 @@ export class OperatingPeriod {
   description: string;
   bitMask: string;
 
-  constructor(iTimetablePeriod: ITimetablePeriod, iOperatingPeriod: IOperatingPeriod) {
-    this.id = iOperatingPeriod.attributes.id;
-    this.startDate = new Date(iTimetablePeriod.attributes.startDate);
-    this.endDate = new Date(iTimetablePeriod.attributes.endDate);
-    this.name = iOperatingPeriod.attributes.name;
-    this.description = iOperatingPeriod.attributes.description;
-    this.bitMask = iOperatingPeriod.attributes.bitMask;
+  constructor(id: string, startDate: Date, endDate: Date, name: string, description: string, bitMask: string) {
+    this.id = id;
+    this.startDate = startDate;
+    this.endDate = endDate;
+    this.name = name;
+    this.description = description;
+    this.bitMask = bitMask;
+  }
+
+  public static parse(iTimetablePeriod: ITimetablePeriod, iOperatingPeriod: IOperatingPeriod) {
+    return new OperatingPeriod(
+      iOperatingPeriod.attributes.id,
+      new Date(iTimetablePeriod.attributes.startDate),
+      new Date(iTimetablePeriod.attributes.endDate),
+      iOperatingPeriod.attributes.name,
+      iOperatingPeriod.attributes.description,
+      iOperatingPeriod.attributes.bitMask
+    );
   }
 
   public getBit(date: Date): boolean {
@@ -505,7 +516,7 @@ export class Railml {
 
     // OPs
     for (let iop of Util.toArray(iRailmlDocument.railml.timetable.operatingPeriods.operatingPeriod)) {
-      let op = new OperatingPeriod(iTimetablePeriod, iop);
+      let op = OperatingPeriod.parse(iTimetablePeriod, iop);
       this.ops.set(op.id, op);
     }
 
