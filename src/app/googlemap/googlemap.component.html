@@ -1,16 +1,36 @@
 <mat-card>
   <mat-card-title>Map</mat-card-title>
   <mat-card-content>
+    <mat-slider style="width:100%"
+                thumbLabel
+                [displayWith]="formatTime"
+                tickInterval="1"
+                min="{{min}}"
+                max="{{max}}"
+                [(value)]="utcTime" (input)="onSliderValueChanged($event.value)"></mat-slider>
+
     <google-map [options]="mapOptions" width="100%">
-      <!--          <map-circle *ngFor="let stationCircle of stationCircles" [center]="stationCircle" [radius]="250"></map-circle>-->
-      <map-polyline [path]="stations" [options]="{strokeColor:'#ff0000'}"></map-polyline>
-      <map-marker *ngFor="let station of stations"
-                  [position]="station"
-                  [title]="station.name"
-                  [label]="station.code"
-                  [clickable]="true"
-                  [options]="{draggable: false}"></map-marker>
-      <!--          <map-transit-layer></map-transit-layer>-->
+
+      <ng-container *ngFor="let trainCourse of trainCourses">
+        <map-polyline [path]="trainCourse.stations" [options]="{strokeColor:'#ff0000'}"></map-polyline>
+
+        <map-marker *ngIf="trainCourse.trainPosition"
+                    [position]="trainCourse.trainPosition"
+                    [title]="trainCourse.currentStop.trainPartId"
+                    [label]="trainCourse.currentStop.trainNumber"
+                    [clickable]="true"
+                    [options]="{draggable: false}"></map-marker>
+        <map-circle *ngIf="trainCourse.trainPosition" [center]="trainCourse.trainPosition" [radius]="250"></map-circle>
+
+      </ng-container>
+
+<!--      <map-marker *ngFor="let station of stations"-->
+<!--                  [position]="station"-->
+<!--                  [title]="station.name"-->
+<!--                  [label]="station.code"-->
+<!--                  [clickable]="true"-->
+<!--                  [options]="{draggable: false}"></map-marker>-->
+
     </google-map>
   </mat-card-content>
 </mat-card>
