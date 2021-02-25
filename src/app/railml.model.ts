@@ -84,6 +84,7 @@ export interface ITrainPart {
     timetablePeriodRef: string,
     categoryRef: string,
     line: string,
+    cancellation: string,
   }
   operatingPeriodRef: IOperatingPeriodRef;
   ocpsTT: IOcpsTT;
@@ -273,6 +274,7 @@ export class TrainPart {
   name: string;
   line: string;
   op: OperatingPeriod;
+  cancellation: boolean;
   ocpTTs: OcpTT[] = [];
   stops: OcpTT[] = [];
   referencedBy: Set<Train> = new Set();
@@ -288,6 +290,7 @@ export class TrainPart {
     this.name = iTrainPart.attributes.name;
     this.line = iTrainPart.attributes.line;
     this.op = op;
+    this.cancellation = iTrainPart.attributes.cancellation === 'true';
 
     // OcpTTs
     for (let iOcpTT of Util.toArray(iTrainPart.ocpsTT.ocpTT)) {
@@ -306,16 +309,6 @@ export class TrainPart {
     this.stopList = this.stops
       .map(o => o.ocp.code + ' - ' + o.ocp.name)
       .join('\n');
-
-    this.commercialUses = [...this.referencedBy]
-      .filter(t => t.type === TrainType.COMMERCIAL)
-      .map(t => t.trainNumber)
-      .join(' ');
-
-    this.operationalUses = [...this.referencedBy]
-      .filter(t => t.type === TrainType.OPERATIONAL)
-      .map(t => t.trainNumber)
-      .join(' ');
   }
 
   get from(): string {
@@ -336,6 +329,18 @@ export class TrainPart {
 
   get timesReferenced(): number {
     return this.referencedBy.size;
+  }
+
+  public updateReferencedBy(): void {
+    this.commercialUses = [...this.referencedBy]
+      .filter(t => t.type === TrainType.COMMERCIAL)
+      .map(t => t.trainNumber)
+      .join(' ');
+
+    this.operationalUses = [...this.referencedBy]
+      .filter(t => t.type === TrainType.OPERATIONAL)
+      .map(t => t.trainNumber)
+      .join(' ');
   }
 }
 
@@ -502,6 +507,9 @@ export class Railml {
   ops = new Map<string, OperatingPeriod>();
   trainParts = new Map<string, TrainPart>();
   trains = new Map<string, Train>();
+  operationalTrains = new Map<string, Train>();
+  commercialTrains = new Map<string, Train>();
+  commercialTrainNumbers = new Set<string>();
 
   constructor(iRailmlDocument: IRailmlDocument) {
     let iTimetablePeriod = Util.toArray(iRailmlDocument.railml.timetable.timetablePeriods.timetablePeriod)[0]; // there should be exactly one
@@ -531,6 +539,12 @@ export class Railml {
     for (let itrain of Util.toArray(iRailmlDocument.railml.timetable.trains.train)) {
       let train = new Train(itrain, this.trainParts);
       this.trains.set(train.id, train);
+      if (train.type === TrainType.OPERATIONAL) {
+        this.operationalTrains.set(train.id, train);
+      } else if (train.type === TrainType.COMMERCIAL) {
+        this.commercialTrains.set(train.id, train);
+        this.commercialTrainNumbers.add(train.trainNumber);
+      }
     }
 
     // Create TrainPart->Train references
@@ -539,6 +553,7 @@ export class Railml {
         for (let tpRef of seq.trainParts) {
           let trainPart = tpRef.trainPart;
           trainPart.referencedBy.add(train);
+          trainPart.updateReferencedBy();
         }
       }
     }

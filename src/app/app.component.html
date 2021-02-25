@@ -79,7 +79,8 @@
                 <th style="height:53px" class="mat-header-cell">Train part & OP</th>
                 <ng-container *ngFor="let trainPart of visibleTrainParts">
                   <tr [attr.data-tpid]="trainPart.id" #tpElement>
-                    <td style="width:120px;cursor: pointer;background:{{trainPartToColor(trainPart)}}" matTooltip="{{trainPart.from + ' - ' + trainPart.to}} ({{trainPart.id}})"
+                    <td [className]="trainPart.cancellation?'cancelled':''" style="width:120px;cursor: pointer;background:{{trainPartToColor(trainPart)}}"
+                        matTooltip="{{trainPart.from + ' - ' + trainPart.to}} ({{trainPart.id}})"
                         (click)="map.selectTrainPart(trainPart)">
                       {{trainPart.fromCode + ' - ' + trainPart.toCode}}</td>
 

@@ -10,7 +10,9 @@
     <ul>
       <li>RailML: {{fileName}}</li>
       <li>Date range: {{railml.startDate | date:'dd.MM.yyyy'}} - {{railml.endDate | date:'dd.MM.yyyy'}}</li>
-      <li>Number of trains: {{railml.trains.size}}</li>
+      <li>Number of trains: {{railml.trains.size}}
+        (commercial: {{railml.commercialTrains.size}}, operational: {{railml.operationalTrains.size}}, comm. numbers: {{railml.commercialTrainNumbers.size}} )
+      </li>
       <li>Number of train parts: {{railml.trainParts.size}}</li>
       <li>Number of operating periods: {{railml.ops.size}}</li>
     </ul>
