@@ -1,7 +1,6 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
-import {Train, TrainPart} from "../railml.model";
+import {OperatingPeriod, Train, TrainPart} from "../railml.model";
 import {GoogleMap} from "@angular/google-maps";
-import {timer} from "rxjs";
 
 export class Station {
   lat: number;
@@ -61,59 +60,43 @@ export class GooglemapComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    timer(0, 100)
-      .subscribe(() => {
-        this.lerpedTime = this.lerp(this.lerpedTime, this.utcTime, 0.6);
-
-        for (let course of this.trainCourses) {
-          if (course.stops.length < 2) {
-            course.trainPosition = undefined;
-          } else {
-
-            let previousStop = course.stops[course.stops.length - 1];
-            let nextStop = course.stops[course.stops.length - 1];
-            let ratio = 0.0;
-
-            for (let i = 0; i < course.stops.length; i++) {
-              if (this.lerpedTime < course.stops[i].arrival) {
-                previousStop = course.stops[Math.max(i - 1, 0)]
-                nextStop = course.stops[i];
-                let span = nextStop.arrival - previousStop.departure;
-                ratio = span > 0 ? (this.lerpedTime - previousStop.departure) / span : 0;
-                break;
-              } else if (this.lerpedTime >= course.stops[i].arrival && this.lerpedTime <= course.stops[i].departure) {
-                previousStop = course.stops[i];
-                nextStop = course.stops[i];
-                break;
-              }
-            }
-
-            course.currentStop = nextStop;
-            course.trainPosition = {
-              lat: previousStop.station.lat * (1.0 - ratio) + nextStop.station.lat * ratio,
-              lng: previousStop.station.lng * (1.0 - ratio) + nextStop.station.lng * ratio
-            };
-          }
-        }
-      });
   }
 
   private lerp(v0: number, v1: number, t: number): number {
     return v0 + t * (v1 - v0);
   }
 
+  onTrainClicked(train: Train, $event: any) {
+    if ($event.shiftKey) {
+      this.toggleTrain(train);
+    } else {
+      this.selectTrain(train);
+    }
+  }
+
   public selectTrain(train: Train) {
+    this.selectedTrains.clear();
+    this.selectedTrains.add(train);
+    this.update();
+  }
+
+  public toggleTrain(train: Train) {
     if (this.selectedTrains.has(train)) {
       this.selectedTrains.delete(train);
     } else {
       this.selectedTrains.add(train);
     }
-    this.updateMap();
+    this.update();
   }
 
   public selectTrainPart(trainPart: TrainPart) {
     this.selectedTrainParts.add(trainPart);
+    this.update();
+  }
+
+  private update() {
     this.updateMap();
+    this.updateCourses();
   }
 
   private updateMap() {
@@ -159,6 +142,39 @@ export class GooglemapComponent implements OnInit {
       this.trainCourses.push(trainCourse);
     }
     this.fitBounds();
+  }
+
+  private updateCourses() {
+    for (let course of this.trainCourses) {
+      if (course.stops.length < 2) {
+        course.trainPosition = undefined;
+      } else {
+
+        let previousStop = course.stops[course.stops.length - 1];
+        let nextStop = course.stops[course.stops.length - 1];
+        let ratio = 0.0;
+
+        for (let i = 0; i < course.stops.length; i++) {
+          if (this.utcTime < course.stops[i].arrival) {
+            previousStop = course.stops[Math.max(i - 1, 0)]
+            nextStop = course.stops[i];
+            let span = nextStop.arrival - previousStop.departure;
+            ratio = span > 0 ? (this.utcTime - previousStop.departure) / span : 0;
+            break;
+          } else if (this.utcTime >= course.stops[i].arrival && this.utcTime <= course.stops[i].departure) {
+            previousStop = course.stops[i];
+            nextStop = course.stops[i];
+            break;
+          }
+        }
+
+        course.currentStop = nextStop;
+        course.trainPosition = {
+          lat: previousStop.station.lat * (1.0 - ratio) + nextStop.station.lat * ratio,
+          lng: previousStop.station.lng * (1.0 - ratio) + nextStop.station.lng * ratio
+        };
+      }
+    }
   }
 
   // private appendStops(trainPart: TrainPart) {
@@ -213,5 +229,6 @@ export class GooglemapComponent implements OnInit {
 
   onSliderValueChanged(value: number) {
     this.utcTime = value;
+    this.updateCourses();
   }
 }

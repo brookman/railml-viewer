@@ -17,7 +17,6 @@ export interface LeaderLine {
 
 declare var LeaderLine: any;
 
-
 @Component({
   selector: 'app-root',
   encapsulation: ViewEncapsulation.None,
@@ -53,13 +52,12 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
 
   lines: LeaderLine[] = [];
 
-  reDrawLines = false;
+  reDrawLines = true;
   updateLines: BehaviorSubject<Object> = new BehaviorSubject<Object>(1);
 
   visibleTrainParts: TrainPart[] = [];
 
   ngAfterContentChecked() {
-    // console.log('ngAfterContentChecked');
     this.updateLines.next(1);
   }
 
@@ -69,6 +67,8 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
 
     this.dataSource2.paginator = this.paginator;
     this.dataSource2.sort = this.sort;
+
+    this.reDrawLines = true;
   }
 
   constructor(
@@ -98,9 +98,8 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
     this.updateLines
       .pipe(
         filter(_ => this.reDrawLines),
-        debounceTime(300))
+        debounceTime(100))
       .subscribe(_ => {
-        console.log("draw lines");
         this.regenerateVisibleTrainParts();
 
         for (let line of this.lines) {
@@ -164,7 +163,7 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
           //     }));
           //   }
           // }
-          this.reDrawLines = false;
+          // this.reDrawLines = false;
         }
       });
   }
@@ -208,7 +207,7 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
   }
 
   getTrainColor(train: Train) {
-    return train.type === TrainType.COMMERCIAL ? 'hsl(20,80%,70%)' : 'hsl(220,80%,70%)';
+    return train.type === TrainType.COMMERCIAL ? 'hsl(217,45%,58%)' : 'hsl(0,100%,72%)';
   }
 
   getGradientFromHash(hash: number): string {
@@ -252,10 +251,9 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
     this.reDrawLines = true;
   }
 
-  setOp(op: OperatingPeriod, $event:any) {
+  setOp(op: OperatingPeriod, $event: any) {
     this.selectedOp = op;
     if ($event.shiftKey) {
-      console.log('toggle');
       this.opCalendarService.selectOp(op);
     } else {
       this.opCalendarService.selectOp(op);
@@ -263,7 +261,6 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
   }
 
   onSortChange($event: any) {
-    console.log('onSortChange', $event);
     this.reDrawLines = true;
   }
 

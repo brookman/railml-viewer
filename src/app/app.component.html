@@ -23,8 +23,10 @@
                 <ng-container matColumnDef="trainNumber">
                   <th mat-header-cell *matHeaderCellDef mat-sort-header>Number</th>
                   <td mat-cell *matCellDef="let train" style="background-color:{{getTrainColor(train)}}">
-                    <strong *ngIf="highlightTrain(train)" (click)="map.selectTrain(train)" style="cursor: pointer;">{{train.trainNumber}}</strong>
-                    <p *ngIf="!highlightTrain(train)" (click)="map.selectTrain(train)" style="cursor: pointer;">{{train.trainNumber}}</p>
+                    <p (click)="map.onTrainClicked(train, $event)" style="cursor: pointer;">
+                      <strong *ngIf="highlightTrain(train)">{{train.trainNumber}}</strong>
+                      <ng-container *ngIf="!highlightTrain(train)">{{train.trainNumber}}</ng-container>
+                    </p>
                   </td>
                 </ng-container>
 
@@ -118,8 +120,10 @@
                 <ng-container matColumnDef="trainNumber">
                   <th mat-header-cell *matHeaderCellDef mat-sort-header>Number</th>
                   <td mat-cell *matCellDef="let train" style="background-color:{{getTrainColor(train)}}">
-                    <strong *ngIf="highlightTrain(train)" (click)="map.selectTrain(train)" style="cursor: pointer;">{{train.trainNumber}}</strong>
-                    <p *ngIf="!highlightTrain(train)" (click)="map.selectTrain(train)" style="cursor: pointer;">{{train.trainNumber}}</p>
+<!--                    <p (click)="map.onTrainClicked(train, $event)" style="cursor: pointer;">-->
+                      <strong *ngIf="highlightTrain(train)">{{train.trainNumber}}</strong>
+                      <ng-container *ngIf="!highlightTrain(train)">{{train.trainNumber}}</ng-container>
+<!--                    </p>-->
                   </td>
                 </ng-container>
 
