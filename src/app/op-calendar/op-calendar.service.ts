@@ -1,8 +1,9 @@
 import {Injectable} from '@angular/core';
-import {BehaviorSubject, Observable} from "rxjs";
+import {BehaviorSubject, combineLatest, Observable} from "rxjs";
 import {OperatingPeriod, Railml} from "../railml.model";
 import {RailmlParserService} from "../railml-parser.service";
 import {filter} from "rxjs/operators";
+import {Filter, RailFilterService} from "../rail-filter/rail-filter.service";
 
 export class Calendar {
   constructor(
@@ -28,12 +29,24 @@ export class OpCalendarService {
   private calendar$ = new BehaviorSubject<Calendar>(null);
 
   private months: Month[];
-  private selectedOp?: OperatingPeriod = null;
 
-  constructor(private railmParserService: RailmlParserService) {
-    railmParserService.getRailmlEvents()
-      .pipe(filter(railml => !!railml))
-      .subscribe(railml => this.updateCalendar(railml));
+  private railml: Railml;
+  private filter?: Filter = null;
+
+  constructor(
+    private railmParserService: RailmlParserService,
+    private railFilterService: RailFilterService
+  ) {
+    const railmlSub = railmParserService.getRailmlEvents()
+      .pipe(filter(railml => !!railml));
+    const filterSub = railFilterService.getFilter();
+
+    combineLatest([railmlSub, filterSub])
+      .subscribe(([railml, filter]) => {
+        this.railml = railml;
+        this.filter = filter;
+        this.updateCalendar();
+      });
   }
 
   public getCalendar(): Observable<Calendar> {
@@ -41,13 +54,15 @@ export class OpCalendarService {
   }
 
   public selectOp(op: OperatingPeriod) {
-    this.selectedOp = op;
-    this.calendar$.next(new Calendar(this.months, this.selectedOp));
+    // this.selectedOp = op;
+    // this.calendar$.next(new Calendar(this.months, this.selectedOp));
   }
 
-  private updateCalendar(railml: Railml) {
-    this.months = OpCalendarService.generateMonths(railml.startDate, railml.endDate);
-    this.calendar$.next(new Calendar(this.months, this.selectedOp));
+  private updateCalendar() {
+    if (!!this.railml) {
+      this.months = OpCalendarService.generateMonths(this.railml.startDate, this.railml.endDate);
+      this.calendar$.next(new Calendar(this.months, this.filter?.combinedOp));
+    }
   }
 
   private static generateMonths(startDate: Date, endDate: Date): Month[] {

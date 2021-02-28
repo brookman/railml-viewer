@@ -232,6 +232,7 @@ export class OperatingPeriod {
   name: string;
   description: string;
   bitMask: string;
+  utfMask: string;
 
   constructor(id: string, startDate: Date, endDate: Date, name: string, description: string, bitMask: string) {
     this.id = id;
@@ -240,6 +241,12 @@ export class OperatingPeriod {
     this.name = name;
     this.description = description;
     this.bitMask = bitMask;
+
+    let utfMaskArray = [];
+    for (let i = 0; i < bitMask.length; i++) {
+      utfMaskArray.push(bitMask.charAt(i) === '1' ? '\u25A0' : '\u25A1');
+    }
+    this.utfMask = utfMaskArray.join('');
   }
 
   public static parse(iTimetablePeriod: ITimetablePeriod, iOperatingPeriod: IOperatingPeriod) {

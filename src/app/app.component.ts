@@ -4,10 +4,10 @@ import {OperatingPeriod, Railml, Train, TrainPart, TrainType} from "./railml.mod
 import {MatTable, MatTableDataSource} from "@angular/material/table";
 import {MatSort} from "@angular/material/sort";
 import {BehaviorSubject} from "rxjs";
-import {debounceTime, filter} from "rxjs/operators";
+import {debounceTime} from "rxjs/operators";
 import {MatPaginator} from "@angular/material/paginator";
-import {OpCalendarService} from "./op-calendar/op-calendar.service";
 import {GooglemapComponent} from "./googlemap/googlemap.component";
+import {Filter, RailFilterService} from "./rail-filter/rail-filter.service";
 
 export interface LeaderLine {
   remove();
@@ -30,16 +30,14 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
 
   dataSource = new MatTableDataSource([]);
   dataSource2 = new MatTableDataSource([]);
-  displayedColumns: string[] = ['trainNumber', 'name', 'type', 'complexity', 'sequences'];
-  displayedColumns2: string[] = ['sequences', 'trainNumber', 'name', 'type', 'complexity'];
+  displayedColumns: string[] = ['trainNumber', 'name', 'complexity', 'sequences'];
+  displayedColumns2: string[] = ['sequences', 'trainNumber', 'name', 'complexity'];
 
   filter: string = "";
   directMatch: Set<Train> = new Set();
   relatedMatch: Set<Train> = new Set();
 
   @ViewChild(MatSort) sort: MatSort;
-
-  selectedOp: OperatingPeriod;
 
   @ViewChild(MatTable) table: MatTable<any>;
   @ViewChild(MatPaginator) paginator: MatPaginator;
@@ -52,13 +50,12 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
 
   lines: LeaderLine[] = [];
 
-  reDrawLines = true;
-  updateLines: BehaviorSubject<Object> = new BehaviorSubject<Object>(1);
+  updateLinesSubject: BehaviorSubject<Object> = new BehaviorSubject<Object>(1);
 
   visibleTrainParts: TrainPart[] = [];
 
   ngAfterContentChecked() {
-    this.updateLines.next(1);
+    this.updateLines();
   }
 
   ngAfterViewInit() {
@@ -68,14 +65,13 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
     this.dataSource2.paginator = this.paginator;
     this.dataSource2.sort = this.sort;
 
-    this.reDrawLines = true;
+    this.updateLines();
   }
 
   constructor(
     private railmlParserService: RailmlParserService,
-    private opCalendarService: OpCalendarService,
+    private railFilterService: RailFilterService,
   ) {
-    // railmlParserService.getRailml('2021_v2_large.xml')
     railmlParserService.getRailmlEvents()
       .subscribe(
         railml => {
@@ -84,7 +80,7 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
             this.railml = railml;
             this.dataSource.data = this.getTrains(TrainType.COMMERCIAL);
             this.dataSource2.data = this.getTrains(TrainType.OPERATIONAL);
-            this.reDrawLines = true;
+            this.updateLines();
           }
         },
         err => {
@@ -92,12 +88,14 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
         }
       );
 
+    railFilterService.getFilter()
+      .subscribe(filter => this.applyFilter(filter));
+
     this.dataSource.filterPredicate = (train, filter) => train.type === TrainType.COMMERCIAL && (this.directMatch.has(train) || this.relatedMatch.has(train));
     this.dataSource2.filterPredicate = (train, filter) => train.type === TrainType.OPERATIONAL && (this.directMatch.has(train) || this.relatedMatch.has(train));
 
-    this.updateLines
+    this.updateLinesSubject
       .pipe(
-        filter(_ => this.reDrawLines),
         debounceTime(100))
       .subscribe(_ => {
         this.regenerateVisibleTrainParts();
@@ -149,25 +147,9 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
               }));
             }
           }
-
-          // for (let [_, elements] of map) {
-          //   for (let i = 0; i < elements.length - 1; i++) {
-          //     this.lines.push(new LeaderLine(elements[i].nativeElement, elements[i + 1].nativeElement, {
-          //       size: 2,
-          //       startSocket: 'center',
-          //       endSocket: 'center',
-          //       path: 'fluid',
-          //       startPlug: 'behind',
-          //       endPlug: 'behind',
-          //       color: '#3344aa'
-          //     }));
-          //   }
-          // }
-          // this.reDrawLines = false;
         }
       });
   }
-
 
   getKeys(map) {
     return Array.from(map.keys());
@@ -230,9 +212,8 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
     return hash;
   }
 
-  applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.filter = filterValue.trim().toLowerCase();
+  applyFilter(filter: Filter) {
+    this.filter = filter.trainNumber.trim().toLowerCase();
 
     this.directMatch.clear();
     this.relatedMatch.clear();
@@ -240,28 +221,33 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
     for (let train of this.getTrains()) {
       if (train.trainNumber.startsWith(this.filter)) {
         this.directMatch.add(train);
-        for (let relatedTrain of train.getRelatedTrainsRecursively()) {
-          this.relatedMatch.add(relatedTrain);
+        if (filter.showRelated) {
+          for (let relatedTrain of train.getRelatedTrainsRecursively()) {
+            this.relatedMatch.add(relatedTrain);
+          }
         }
       }
     }
 
     this.dataSource.filter = this.filter;
     this.dataSource2.filter = this.filter;
-    this.reDrawLines = true;
+    this.updateLines();
   }
 
   setOp(op: OperatingPeriod, $event: any) {
-    this.selectedOp = op;
     if ($event.shiftKey) {
-      this.opCalendarService.selectOp(op);
+      this.railFilterService.toggleOp(op);
     } else {
-      this.opCalendarService.selectOp(op);
+      this.railFilterService.setSelectedOp(op);
     }
   }
 
   onSortChange($event: any) {
-    this.reDrawLines = true;
+    this.updateLines();
+  }
+
+  private updateLines() {
+    this.updateLinesSubject.next(1);
   }
 
   private regenerateVisibleTrainParts() {

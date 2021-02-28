@@ -3,75 +3,98 @@ import {FormControl} from "@angular/forms";
 import {RailmlParserService} from "../railml-parser.service";
 import {OperatingPeriod} from "../railml.model";
 import {OpCalendarService} from "../op-calendar/op-calendar.service";
+import {Filter, RailFilterService} from "./rail-filter.service";
+import {BehaviorSubject} from "rxjs";
 
 @Component({
-  selector: 'rail-filter',
-  templateUrl: './rail-filter.component.html',
-  styleUrls: ['./rail-filter.component.scss']
+    selector: 'rail-filter',
+    templateUrl: './rail-filter.component.html',
+    styleUrls: ['./rail-filter.component.scss']
 })
 export class RailFilterComponent implements OnInit {
+    filter: Filter = new Filter();
 
-  opControl = new FormControl([]);
-  opList: OperatingPeriod[] = [];
+    opControl = new FormControl([]);
+    opList: OperatingPeriod[] = [];
 
-  constructor(
-    private railmlParserService: RailmlParserService,
-    private opCalendarService: OpCalendarService) {
-  }
+    private filterSubject: BehaviorSubject<Filter>
 
-  ngOnInit() {
-    this.railmlParserService.getRailmlEvents()
-      .subscribe(railml => {
-        if (railml) {
-          this.opList = [...railml.ops.values()];
-          this.opList.sort();
-        } else {
-          this.opList = [];
-        }
+    constructor(
+        private railmlParserService: RailmlParserService,
+        private railFilterService: RailFilterService,
+        private opCalendarService: OpCalendarService) {
+        this.filterSubject = railFilterService.getFilterSubject();
+    }
+
+    ngOnInit() {
+        this.filter.reset();
+        this.railmlParserService.getRailmlEvents()
+            .subscribe(railml => {
+                let newSelectedOps = []
+                if (railml) {
+                    this.opList = [...railml.ops.values()];
+                    this.opList.sort();
+                    for (let selectedOp of this.filter.selectedOps) {
+                        if (railml.ops.has(selectedOp.id)) {
+                            newSelectedOps.push(railml.ops.get(selectedOp.id));
+                        }
+                    }
+                } else {
+                    this.opList = [];
+                }
+                this.filter.selectedOps = newSelectedOps;
+                this.opControl.setValue(newSelectedOps);
+                this.sendUpdate();
+            });
+
+        this.opControl.registerOnChange(() => {
+            this.filter.selectedOps = this.opControl.value as OperatingPeriod[];
+            this.sendUpdate();
+        });
+    }
+
+    onOpRemoved(op: OperatingPeriod) {
+        const ops = this.opControl.value as OperatingPeriod[];
+        RailFilterComponent.removeFirst(ops, op);
         this.opControl.setValue([]);
-      });
-
-    this.opControl.registerOnChange(() => {
-      this.opCalendarService.selectOp(this.getCombinedMask());
-    });
-  }
-
-  onOpRemoved(op: OperatingPeriod) {
-    const ops = this.opControl.value as OperatingPeriod[];
-    RailFilterComponent.removeFirst(ops, op);
-    this.opControl.setValue([]);
-    this.opControl.setValue(ops); // To trigger change detection
-  }
-
-  private getCombinedMask(): OperatingPeriod | null {
-    const ops = this.opControl.value as OperatingPeriod[];
-    if (ops.length <= 0) {
-      return null;
+        this.opControl.setValue(ops); // To trigger change detection
+        // this.filter.selectedOps = ops;
     }
 
-    let result = Array.from('0'.repeat(ops[0].bitMask.length));
-    for (let op of ops) {
-      for (let i = 0; i < op.bitMask.length; i++) {
-        if (op.bitMask.charAt(i) === '1') {
-          result[i] = '1';
+    sendUpdate() {
+        this.filterSubject.next(this.filter);
+    }
+
+    get combinedBitMask(): string | null {
+        let op = this.filter?.combinedOp;
+        if (op) {
+            return op.utfMask;
         }
-      }
+        if (this.opList && this.opList.length > 0) {
+            return Array.from('\u25A0'.repeat(this.opList[0].bitMask.length)).join('')
+        }
+        return '';
     }
-    return new OperatingPeriod('0', ops[0].startDate, ops[0].endDate, 'generated', 'generated', result.join(''));
-  }
 
-  private static removeFirst<T>(array: T[], toRemove: T): void {
-    const index = array.indexOf(toRemove);
-    if (index !== -1) {
-      array.splice(index, 1);
+    private static removeFirst<T>(array: T[], toRemove: T): void {
+        const index = array.indexOf(toRemove);
+        if (index !== -1) {
+            array.splice(index, 1);
+        }
     }
-  }
 
-  clearSelection() {
-    this.opControl.setValue([]);
-  }
+    clearSelection() {
+        this.filter.selectedOps = [];
+        this.opControl.setValue([]);
+    }
 
-  onSelectionChange($event: any) {
-    this.opCalendarService.selectOp(this.getCombinedMask());
-  }
+    onSelectionChange($event: any) {
+        this.filter.selectedOps = this.opControl.value as OperatingPeriod[];
+        this.sendUpdate();
+    }
+
+    clearTrainNumber() {
+        this.filter.trainNumber = '';
+        this.sendUpdate();
+    }
 }

@@ -12,11 +12,6 @@
           <mat-card-title>Trains</mat-card-title>
           <mat-card-content fxLayout="column">
 
-            <mat-form-field>
-              <mat-label>Filter by train number</mat-label>
-              <input matInput (keyup)="applyFilter($event)" placeholder="1234" #input>
-            </mat-form-field>
-
             <div fxLayout="row">
               <table style="width:45%" mat-table matSort [dataSource]="dataSource" (matSortChange)="onSortChange($event)" class="mat-elevation-z0">
 
@@ -83,8 +78,9 @@
 
                     <td style="width:60px;background:{{operatingPeriodToColor(trainPart.op)}}">
                       <div (click)="setOp(trainPart.op, $event)" style="cursor: pointer;">
-                        <strong *ngIf="trainPart.op === selectedOp">OP: {{trainPart.op.name}}</strong>
-                        <span *ngIf="trainPart.op !== selectedOp">OP: {{trainPart.op.name}}</span>
+                        <!--                        <strong *ngIf="trainPart.op === selectedOp">OP: {{trainPart.op.name}}</strong>-->
+                        <!--                        <span *ngIf="trainPart.op !== selectedOp">OP: {{trainPart.op.name}}</span>-->
+                        <span>OP: {{trainPart.op.name}}</span>
                       </div>
                     </td>
                   </tr>
@@ -120,10 +116,10 @@
                 <ng-container matColumnDef="trainNumber">
                   <th mat-header-cell *matHeaderCellDef mat-sort-header>Number</th>
                   <td mat-cell *matCellDef="let train" style="background-color:{{getTrainColor(train)}}">
-<!--                    <p (click)="map.onTrainClicked(train, $event)" style="cursor: pointer;">-->
-                      <strong *ngIf="highlightTrain(train)">{{train.trainNumber}}</strong>
-                      <ng-container *ngIf="!highlightTrain(train)">{{train.trainNumber}}</ng-container>
-<!--                    </p>-->
+                    <!--                    <p (click)="map.onTrainClicked(train, $event)" style="cursor: pointer;">-->
+                    <strong *ngIf="highlightTrain(train)">{{train.trainNumber}}</strong>
+                    <ng-container *ngIf="!highlightTrain(train)">{{train.trainNumber}}</ng-container>
+                    <!--                    </p>-->
                   </td>
                 </ng-container>
 
