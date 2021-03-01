@@ -1,5 +1,5 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
-import {OperatingPeriod, Train, TrainPart} from "../railml.model";
+import {Train, TrainPart} from "../railml.model";
 import {GoogleMap} from "@angular/google-maps";
 
 export class Station {
@@ -22,6 +22,7 @@ export class TrainCourse {
   stops: Stop[];
 
   trainPosition: { lat: number, lng: number } = undefined;
+  offset: { lat: number, lng: number } = undefined;
   currentStop: Stop;
 
   get stations(): Station[] {
@@ -132,7 +133,7 @@ export class GooglemapComponent implements OnInit {
                 station: station,
                 arrival: this.getUTC(ocpTT.arrival ? ocpTT.arrival : ocpTT.departure),
                 departure: this.getUTC(ocpTT.departure ? ocpTT.departure : ocpTT.arrival),
-                trainNumber: trainPart.trainNumber,
+                trainNumber: trainPart.operationalUses + ' ' + trainPart.commercialUses,
                 trainPartId: trainPart.id,
               });
             }
@@ -145,9 +146,11 @@ export class GooglemapComponent implements OnInit {
   }
 
   private updateCourses() {
+    let offset = 0;
     for (let course of this.trainCourses) {
       if (course.stops.length < 2) {
         course.trainPosition = undefined;
+        course.offset = undefined;
       } else {
 
         let previousStop = course.stops[course.stops.length - 1];
@@ -173,6 +176,11 @@ export class GooglemapComponent implements OnInit {
           lat: previousStop.station.lat * (1.0 - ratio) + nextStop.station.lat * ratio,
           lng: previousStop.station.lng * (1.0 - ratio) + nextStop.station.lng * ratio
         };
+        course.offset = {
+          lat: course.trainPosition.lat + Math.cos(2.0 * offset / this.trainCourses.length * Math.PI + Math.PI * 0.25) * 0.05,
+          lng: course.trainPosition.lng + Math.sin(2.0 * offset / this.trainCourses.length * Math.PI + Math.PI * 0.25) * 0.05,
+        };
+        offset++;
       }
     }
   }

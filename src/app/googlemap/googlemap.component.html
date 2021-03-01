@@ -15,21 +15,22 @@
         <map-polyline [path]="trainCourse.stations" [options]="{strokeColor:'#ff0000'}"></map-polyline>
 
         <map-marker *ngIf="trainCourse.trainPosition"
-                    [position]="trainCourse.trainPosition"
+                    [position]="trainCourse.offset"
                     [title]="trainCourse.currentStop.trainPartId"
-                    [label]="trainCourse.currentStop.trainNumber"
+                    [label]="{text: trainCourse.currentStop.trainNumber, color: 'black', fontSize: '8px'}"
                     [clickable]="true"
                     [options]="{draggable: false}"></map-marker>
-<!--        <map-circle *ngIf="trainCourse.trainPosition" [center]="trainCourse.trainPosition" [radius]="250"></map-circle>-->
+
+        <map-polyline [path]="[trainCourse.trainPosition, trainCourse.offset]" [options]="{strokeColor:'#555555'}"></map-polyline>
 
       </ng-container>
 
-<!--      <map-marker *ngFor="let station of stations"-->
-<!--                  [position]="station"-->
-<!--                  [title]="station.name"-->
-<!--                  [label]="station.code"-->
-<!--                  [clickable]="true"-->
-<!--                  [options]="{draggable: false}"></map-marker>-->
+      <!--      <map-marker *ngFor="let station of stations"-->
+      <!--                  [position]="station"-->
+      <!--                  [title]="station.name"-->
+      <!--                  [label]="station.code"-->
+      <!--                  [clickable]="true"-->
+      <!--                  [options]="{draggable: false}"></map-marker>-->
 
     </google-map>
   </mat-card-content>
