@@ -7,6 +7,7 @@ export class Filter {
   public trainNumber = '';
   public showRelated = true;
   public selectedOps: OperatingPeriod[];
+  public additionalOp?: OperatingPeriod;
   public combineOperation = CombineOperation.Intersect;
   public outsideOpGreyedOut = true;
   public combinedMask?: string = undefined;
@@ -15,6 +16,7 @@ export class Filter {
     this.trainNumber = '';
     this.showRelated = true;
     this.selectedOps = [];
+    this.additionalOp = null;
     this.combineOperation = CombineOperation.Intersect;
     this.outsideOpGreyedOut = true;
     this.combinedMask = undefined;
@@ -23,6 +25,9 @@ export class Filter {
   get combinedOp(): OperatingPeriod | null {
     const ops = this.selectedOps;
     if (ops.length <= 0) {
+      if (this.additionalOp) {
+        return this.additionalOp;
+      }
       return null;
     }
 
@@ -30,15 +35,25 @@ export class Filter {
     if (this.combineOperation == CombineOperation.Union) {
       result = Array.from('0'.repeat(ops[0].bitMask.length));
       for (let op of ops) {
-        for (let i = 0; i < op.bitMask.length; i++) {
+        for (let i = 0; i < result.length; i++) {
           result[i] = (op.bitMask.charAt(i) === '1' || result[i] === '1') ? '1' : '0';
+        }
+      }
+      if (this.additionalOp) {
+        for (let i = 0; i < result.length; i++) {
+          result[i] = (this.additionalOp.bitMask.charAt(i) === '1' || result[i] === '1') ? '1' : '0';
         }
       }
     } else if (this.combineOperation == CombineOperation.Intersect) {
       result = Array.from('1'.repeat(ops[0].bitMask.length));
       for (let op of ops) {
-        for (let i = 0; i < op.bitMask.length; i++) {
+        for (let i = 0; i < result.length; i++) {
           result[i] = (op.bitMask.charAt(i) === '1' && result[i] === '1') ? '1' : '0';
+        }
+      }
+      if (this.additionalOp) {
+        for (let i = 0; i < result.length; i++) {
+          result[i] = (this.additionalOp.bitMask.charAt(i) === '1' && result[i] === '1') ? '1' : '0';
         }
       }
     }

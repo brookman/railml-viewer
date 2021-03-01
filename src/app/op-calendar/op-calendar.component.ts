@@ -21,12 +21,12 @@ export class OpCalendarComponent implements OnInit {
     this.opCalendarService.getCalendar()
       .subscribe(calendar => {
         this.calendar = calendar;
-        this.dateClassLambda = this.getDateClassLambda();
-        if (this.calendarElements) {
-          for (let calElement of this.calendarElements) {
-            calElement.updateTodaysDate();
-          }
-        }
+        // this.dateClassLambda = this.getDateClassLambda();
+        // if (this.calendarElements) {
+        //   for (let calElement of this.calendarElements) {
+        //     calElement.updateTodaysDate();
+        //   }
+        // }
       });
   }
 

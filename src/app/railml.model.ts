@@ -240,13 +240,7 @@ export class OperatingPeriod {
     this.endDate = endDate;
     this.name = name;
     this.description = description;
-    this.bitMask = bitMask;
-
-    let utfMaskArray = [];
-    for (let i = 0; i < bitMask.length; i++) {
-      utfMaskArray.push(bitMask.charAt(i) === '1' ? '\u25A0' : '\u25A1');
-    }
-    this.utfMask = utfMaskArray.join('');
+    this.setBitMask(bitMask);
   }
 
   public static parse(iTimetablePeriod: ITimetablePeriod, iOperatingPeriod: IOperatingPeriod) {
@@ -260,9 +254,43 @@ export class OperatingPeriod {
     );
   }
 
+  private setBitMask(bitMask: string) {
+    this.bitMask = bitMask;
+
+    let utfMaskArray = [];
+    for (let i = 0; i < bitMask.length; i++) {
+      utfMaskArray.push(bitMask.charAt(i) === '1' ? '\u25A0' : '\u25A1');
+    }
+    this.utfMask = utfMaskArray.join('');
+  }
+
   public getBit(date: Date): boolean {
     let diff = OperatingPeriod.dateDiffInDays(this.startDate, date);
     return this.bitMask?.charAt(diff) === '1';
+  }
+
+  public setBit(date: Date, value: boolean) {
+    let diff = OperatingPeriod.dateDiffInDays(this.startDate, date);
+
+    let newBitMask = [];
+    for (let i = 0; i < this.bitMask.length; i++) {
+      if (i === diff) {
+        newBitMask.push(value ? '1' : '0');
+      } else {
+        newBitMask.push(this.bitMask.charAt(i));
+      }
+    }
+    this.setBitMask(newBitMask.join(''));
+  }
+
+  public intersectsWith(otherOp: OperatingPeriod): boolean {
+    let diff = OperatingPeriod.dateDiffInDays(otherOp.startDate, this.startDate);
+    for (let i = 0; i < this.bitMask.length; i++) {
+      if (this.bitMask.charAt(i) === '1' && otherOp.bitMask.charAt(i + diff) === '1') {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static dateDiffInDays(a: Date, b: Date) {

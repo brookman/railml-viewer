@@ -33,7 +33,8 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
   displayedColumns: string[] = ['trainNumber', 'name', 'complexity', 'sequences'];
   displayedColumns2: string[] = ['sequences', 'trainNumber', 'name', 'complexity'];
 
-  filter: string = "";
+  trainNumberFilterString: string = "";
+  filterOp?: OperatingPeriod = null;
   directMatch: Set<Train> = new Set();
   relatedMatch: Set<Train> = new Set();
 
@@ -168,14 +169,14 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
   }
 
   highlightTrain(train: Train) {
-    return this.filter.trim().length > 0 && this.directMatch.has(train);
+    return this.trainNumberFilterString.trim().length > 0 && this.directMatch.has(train);
   }
 
   trainPartToColor(trainPart: TrainPart) {
-    let start = this.hash(trainPart.from);
-    let center = this.hash(trainPart.id);
-    let end = this.hash(trainPart.to);
-    return 'linear-gradient(0deg, hsl(' + start + ',100%,70%) 0%, hsl(' + center + ',100%,70%) 50%, hsl(' + end + ',100%,70%) 100%);';
+    if (!!this.filterOp && !trainPart.op.intersectsWith(this.filterOp)) {
+      return 'hsl(0,0%,50%);'
+    }
+    return this.getGradientFromHash(this.hash(trainPart.id));
   }
 
   sequenceToColor(sequence: number) {
@@ -185,18 +186,38 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
   }
 
   operatingPeriodToColor(operatingPeriod: OperatingPeriod) {
+    if (!!this.filterOp && !operatingPeriod.intersectsWith(this.filterOp)) {
+      return 'hsl(0,0%,50%);'
+    }
     return this.getGradientFromHash(this.hash(operatingPeriod.id));
   }
 
   getTrainColor(train: Train) {
-    return train.type === TrainType.COMMERCIAL ? 'hsl(217,45%,58%)' : 'hsl(0,100%,72%)';
+    if (!!this.filterOp) {
+      let hasIntersections = false;
+      for (let trainPartRef of train.trainParts) {
+        if (trainPartRef.trainPart.op.intersectsWith(this.filterOp)) {
+          hasIntersections = true;
+          break;
+        }
+      }
+      if (!hasIntersections) {
+        return 'hsl(0,0%,50%);'
+      }
+    }
+    return train.type === TrainType.COMMERCIAL ? 'hsl(218,70%,50%)' : 'hsl(19,70%,50%)';
   }
 
-  getGradientFromHash(hash: number): string {
+  getGradientFromHash(hash: number, saturation?: string, lightness?: string): string {
+    if (!saturation) {
+      saturation = '100%'
+    }
+    if (!lightness) {
+      lightness = '70%'
+    }
     let shortened1 = hash % 360;
-    let shortened2 = (hash % (360 * 360)) / 360;
-    let shortened3 = (hash % (360 * 360 * 360)) / (360 * 360);
-    return 'linear-gradient(0deg, hsl(' + shortened1 + ',100%,70%) 0%, hsl(' + shortened3 + ',100%,70%) 100%);';
+    let shortened2 = (hash % (360 * 360 * 360)) / (360 * 360);
+    return 'linear-gradient(0deg, hsl(' + shortened1 + ',' + saturation + ',' + lightness + ') 0%, hsl(' + shortened2 + ',' + saturation + ',' + lightness + ') 100%);';
   }
 
   hash(str: string): number {
@@ -213,13 +234,14 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
   }
 
   applyFilter(filter: Filter) {
-    this.filter = filter.trainNumber.trim().toLowerCase();
+    this.trainNumberFilterString = filter.trainNumber.trim().toLowerCase();
+    this.filterOp = filter.combinedOp;
 
     this.directMatch.clear();
     this.relatedMatch.clear();
 
     for (let train of this.getTrains()) {
-      if (train.trainNumber.startsWith(this.filter)) {
+      if (train.trainNumber.startsWith(this.trainNumberFilterString)) {
         this.directMatch.add(train);
         if (filter.showRelated) {
           for (let relatedTrain of train.getRelatedTrainsRecursively()) {
@@ -229,8 +251,8 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
       }
     }
 
-    this.dataSource.filter = this.filter;
-    this.dataSource2.filter = this.filter;
+    this.dataSource.filter = this.trainNumberFilterString;
+    this.dataSource2.filter = this.trainNumberFilterString;
     this.updateLines();
   }
 

@@ -33,6 +33,13 @@
         </mat-select>
       </mat-form-field>
 
+      <mat-form-field>
+        <mat-label>Single day</mat-label>
+        <input matInput [matDatepicker]="picker" (dateChange)="onDateChanged($event)" [(ngModel)]="singleDate">
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+
       <button mat-icon-button color="basic" (click)="clearSelection()">
         <mat-icon>clear</mat-icon>
       </button>
