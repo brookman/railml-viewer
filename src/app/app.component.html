@@ -13,7 +13,7 @@
           <mat-card-content fxLayout="column">
 
             <div fxLayout="row">
-              <table style="width:45%" mat-table matSort [dataSource]="dataSource" (matSortChange)="onSortChange($event)" class="mat-elevation-z0">
+              <table style="width:45%" mat-table matSort [dataSource]="commercialTrainsDataSource" (matSortChange)="onSortChange($event)" class="mat-elevation-z0">
 
                 <ng-container matColumnDef="trainNumber">
                   <th mat-header-cell *matHeaderCellDef mat-sort-header>Number</th>
@@ -63,8 +63,8 @@
 
                   </td>
                 </ng-container>
-                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                <tr mat-header-row *matHeaderRowDef="commercialColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: commercialColumns;"></tr>
               </table>
 
               <table style="width:10%" class="mat-elevation-z0">
@@ -77,7 +77,7 @@
                       {{trainPart.fromCode + ' - ' + trainPart.toCode}}</td>
 
                     <td style="width:60px;background:{{operatingPeriodToColor(trainPart.op)}}">
-                      <div (click)="setOp(trainPart.op, $event)" style="cursor: pointer;">
+                      <div (click)="onOpSelected(trainPart.op, $event)" style="cursor: pointer;">
                         <!--                        <strong *ngIf="trainPart.op === selectedOp">OP: {{trainPart.op.name}}</strong>-->
                         <!--                        <span *ngIf="trainPart.op !== selectedOp">OP: {{trainPart.op.name}}</span>-->
                         <span>OP: {{trainPart.op.name}}</span>
@@ -87,7 +87,7 @@
                 </ng-container>
               </table>
 
-              <table style="width:45%" mat-table matSort [dataSource]="dataSource2" class="mat-elevation-z0">
+              <table style="width:45%" mat-table matSort [dataSource]="operationalTrainsDataSource" class="mat-elevation-z0">
 
                 <ng-container matColumnDef="sequences">
                   <th mat-header-cell *matHeaderCellDef>Sequences and train parts</th>
@@ -139,8 +139,8 @@
                 </ng-container>
 
 
-                <tr mat-header-row *matHeaderRowDef="displayedColumns2"></tr>
-                <tr mat-row *matRowDef="let row; columns: displayedColumns2;"></tr>
+                <tr mat-header-row *matHeaderRowDef="operationalColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: operationalColumns;"></tr>
               </table>
             </div>
 

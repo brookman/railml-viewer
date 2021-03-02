@@ -4,6 +4,7 @@ import {Railml} from "./railml.model";
 import {parse} from "fast-xml-parser";
 import {HttpClient, HttpHeaders} from "@angular/common/http";
 import {BehaviorSubject, Observable} from "rxjs";
+import {AppStore} from "./app.store";
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +13,10 @@ export class RailmlParserService {
 
   subject = new BehaviorSubject<Railml>(null);
 
-  constructor(private httpClient: HttpClient) {
+  constructor(
+    private httpClient: HttpClient,
+    private appStore: AppStore
+  ) {
   }
 
   public getRailmlEvents(): Observable<Railml> {
@@ -32,7 +36,10 @@ export class RailmlParserService {
       supressEmptyNode: false
     };
 
-    this.subject.next(new Railml(parse(content, defaultOptions)));
+    let railml = new Railml(parse(content, defaultOptions));
+
+    this.subject.next(railml);
+    this.appStore.railmlUpdate(railml);
 
     return this.subject;
   }

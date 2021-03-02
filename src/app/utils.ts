@@ -32,3 +32,44 @@ export class MondayFirstDateAdapter extends NativeDateAdapter {
     return ('00' + n).slice(-2);
   }
 }
+
+export class Utils {
+  public static hash(object: any): number {
+    let str = object + '';
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      let chr = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + chr * chr * chr;
+      hash = ((hash << 5) - hash) + chr * chr * chr;
+      hash = ((hash << 5) - hash) + chr * chr * chr;
+      hash = ((hash << 5) - hash) + chr * chr * chr;
+      hash |= 0; // Convert to 32bit integer
+    }
+    return hash;
+  }
+
+  public static hashToColor(object: any): string {
+    return Utils.getColorFromHash(Utils.hash(object))
+  }
+
+  public static hashToGradient(object: any): string {
+    return Utils.getGradientFromHash(Utils.hash(object))
+  }
+
+  public static getColorFromHash(hash: number, saturation?: string, lightness?: string): string {
+    let shortened = hash % 360;
+    return 'hsl(' + shortened + ',100%,80%)'
+  }
+
+  public static getGradientFromHash(hash: number, saturation?: string, lightness?: string): string {
+    if (!saturation) {
+      saturation = '100%'
+    }
+    if (!lightness) {
+      lightness = '70%'
+    }
+    let shortened1 = hash % 360;
+    let shortened2 = (hash % (360 * 360 * 360)) / (360 * 360);
+    return 'linear-gradient(0deg, hsl(' + shortened1 + ',' + saturation + ',' + lightness + ') 0%, hsl(' + shortened2 + ',' + saturation + ',' + lightness + ') 100%);';
+  }
+}

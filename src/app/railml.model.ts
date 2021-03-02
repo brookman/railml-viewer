@@ -540,11 +540,16 @@ export class Railml {
   endDate: Date;
   ocps = new Map<string, Ocp>();
   ops = new Map<string, OperatingPeriod>();
+  sortedOps: OperatingPeriod[] = [];
   trainParts = new Map<string, TrainPart>();
   trains = new Map<string, Train>();
   operationalTrains = new Map<string, Train>();
   commercialTrains = new Map<string, Train>();
   commercialTrainNumbers = new Set<string>();
+
+  trainList: Train[] = [];
+  operationalTrainList: Train[] = [];
+  commercialTrainTrainList: Train[] = [];
 
   constructor(iRailmlDocument: IRailmlDocument) {
     let iTimetablePeriod = Util.toArray(iRailmlDocument.railml.timetable.timetablePeriods.timetablePeriod)[0]; // there should be exactly one
@@ -561,7 +566,9 @@ export class Railml {
     for (let iop of Util.toArray(iRailmlDocument.railml.timetable.operatingPeriods.operatingPeriod)) {
       let op = OperatingPeriod.parse(iTimetablePeriod, iop);
       this.ops.set(op.id, op);
+      this.sortedOps.push(op);
     }
+    this.sortedOps.sort();
 
     // TrainParts
     for (let itp of Util.toArray(iRailmlDocument.railml.timetable.trainParts.trainPart)) {
@@ -576,11 +583,18 @@ export class Railml {
       this.trains.set(train.id, train);
       if (train.type === TrainType.OPERATIONAL) {
         this.operationalTrains.set(train.id, train);
+        this.operationalTrainList.push(train);
       } else if (train.type === TrainType.COMMERCIAL) {
         this.commercialTrains.set(train.id, train);
         this.commercialTrainNumbers.add(train.trainNumber);
+        this.commercialTrainTrainList.push(train);
       }
+      this.trainList.push(train);
     }
+
+    this.trainList.sort((a, b) => a.trainNumber.localeCompare(b.trainNumber));
+    this.operationalTrainList.sort((a, b) => a.trainNumber.localeCompare(b.trainNumber));
+    this.commercialTrainTrainList.sort((a, b) => a.trainNumber.localeCompare(b.trainNumber));
 
     // Create TrainPart->Train references
     for (let train of this.trains.values()) {

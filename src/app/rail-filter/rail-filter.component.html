@@ -2,15 +2,18 @@
   <mat-card-title>Filter</mat-card-title>
   <mat-card-content fxLayout="column" fxLayoutGap="2em">
 
+<!--    {{railml$ | async | json}}-->
+<!--    {{filter$ | async | json}}-->
+
     <div fxLayout="row" fxLayoutGap="2em" fxLayoutAlign="start center">
       <mat-form-field>
         <mat-label>Train number filter</mat-label>
-        <input matInput placeholder="1234" type="text" [(ngModel)]="filter.trainNumber" (ngModelChange)="sendUpdate()">
-        <button mat-button *ngIf="filter.trainNumber" matSuffix mat-icon-button aria-label="Clear" (click)="clearTrainNumber()">
+        <input matInput placeholder="1234" type="text" [ngModel]="(filter$ | async).trainNumber" (ngModelChange)="onTrainNumberChange($event)">
+        <button mat-button *ngIf="(filter$ | async).trainNumber" matSuffix mat-icon-button aria-label="Clear" (click)="onTrainNumberChange('')">
           <mat-icon>close</mat-icon>
         </button>
       </mat-form-field>
-      <mat-checkbox [(ngModel)]="filter.showRelated" (ngModelChange)="sendUpdate()">Show related trains</mat-checkbox>
+      <mat-checkbox [ngModel]="(filter$ | async).showRelated" (ngModelChange)="onShowRelatedChange($event)">Show related trains</mat-checkbox>
     </div>
 
     <div fxLayout="row" fxLayoutGap="2em" fxLayoutAlign="start center">
@@ -28,14 +31,14 @@
             </mat-chip-list>
           </mat-select-trigger>
 
-          <mat-option *ngFor="let op of opList" [value]="op">{{op.name}} ({{op.id}}) - {{op.description}}</mat-option>
+          <mat-option *ngFor="let op of (operatingPeriods$ | async)" [value]="op">{{op.name}} ({{op.id}}) - {{op.description}}</mat-option>
 
         </mat-select>
       </mat-form-field>
 
       <mat-form-field>
         <mat-label>Single day</mat-label>
-        <input matInput [matDatepicker]="picker" (dateChange)="onDateChanged($event)" [(ngModel)]="singleDate">
+        <input matInput [matDatepicker]="picker" (dateChange)="onDateChanged($event)" [ngModel]="(filter$ | async).singleDate">
         <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
         <mat-datepicker #picker></mat-datepicker>
       </mat-form-field>
@@ -46,18 +49,18 @@
 
       <mat-form-field>
         <mat-label>Combine operation</mat-label>
-        <mat-select [(value)]="filter.combineOperation" (selectionChange)="sendUpdate()">
-          <mat-option value="{{'Intersect'}}">Intersect (AND)</mat-option>
+        <mat-select [value]="(filter$ | async).combineOperation" (selectionChange)="onCombineOperationChanged($event)">
           <mat-option value="{{'Union'}}">Union (OR)</mat-option>
+          <mat-option value="{{'Intersect'}}">Intersect (AND)</mat-option>
         </mat-select>
       </mat-form-field>
 
-      <mat-checkbox [(ngModel)]="filter.outsideOpGreyedOut" (ngModelChange)="sendUpdate()">Outside OP greyed out</mat-checkbox>
+      <mat-checkbox [ngModel]="(filter$ | async).outsideOpGreyedOut" (ngModelChange)="onOutsideOpGreyedOutChange($event)">Outside OP greyed out</mat-checkbox>
 
     </div>
 
-    <div fxLayout="row" fxLayoutGap="0em" fxLayoutAlign="start center" *ngIf="combinedBitMask">
-      <span style="font-size: 7px">{{combinedBitMask}}</span>
+    <div fxLayout="row" fxLayoutGap="0em" fxLayoutAlign="start center" *ngIf="(combinedOperatingPeriod$ | async)">
+      <span style="font-size: 7px">{{(combinedOperatingPeriod$ | async).utfMask}}</span>
     </div>
 
   </mat-card-content>

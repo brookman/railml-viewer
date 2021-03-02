@@ -24,6 +24,8 @@
     "@angular/platform-browser-dynamic": "~10.2.0",
     "@angular/router": "~10.2.0",
     "@jsplumb/browser-ui": "^4.0.0-RC47",
+    "@ngrx/component-store": "^11.0.1",
+    "@ngrx/store": "^11.0.1",
     "fast-xml-parser": "^3.17.6",
     "leader-line": "^1.0.5",
     "rxjs": "~6.6.0",

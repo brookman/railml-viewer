@@ -1,10 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {FormControl} from "@angular/forms";
-import {RailmlParserService} from "../railml-parser.service";
 import {OperatingPeriod} from "../railml.model";
-import {OpCalendarService} from "../op-calendar/op-calendar.service";
-import {Filter, RailFilterService} from "./rail-filter.service";
-import {BehaviorSubject} from "rxjs";
+import {AppStore} from "../app.store";
 
 @Component({
   selector: 'rail-filter',
@@ -12,48 +9,41 @@ import {BehaviorSubject} from "rxjs";
   styleUrls: ['./rail-filter.component.scss']
 })
 export class RailFilterComponent implements OnInit {
-  filter: Filter = new Filter();
 
   opControl = new FormControl([]);
-  opList: OperatingPeriod[] = [];
 
-  private filterSubject: BehaviorSubject<Filter>
-  singleDate: Date;
+  readonly filter$ = this.appStore.filter$;
+  readonly railml$ = this.appStore.railml$;
+  readonly operatingPeriods$ = this.appStore.operatingPeriods$;
+  readonly combinedOperatingPeriod$ = this.appStore.combinedOperatingPeriod$;
 
-  constructor(
-    private railmlParserService: RailmlParserService,
-    private railFilterService: RailFilterService,
-    private opCalendarService: OpCalendarService) {
-    this.filterSubject = railFilterService.getFilterSubject();
+  constructor(private readonly appStore: AppStore) {
   }
 
   ngOnInit() {
-    this.filter.reset();
-    this.singleDate = undefined;
-    this.railmlParserService.getRailmlEvents()
-      .subscribe(railml => {
-        let newSelectedOps = []
-        if (railml) {
-          this.opList = [...railml.ops.values()];
-          this.opList.sort();
-          for (let selectedOp of this.filter.selectedOps) {
-            if (railml.ops.has(selectedOp.id)) {
-              newSelectedOps.push(railml.ops.get(selectedOp.id));
-            }
-          }
-        } else {
-          this.opList = [];
-        }
-        this.singleDate = null;
-        this.filter.additionalOp = null;
-        this.filter.selectedOps = newSelectedOps;
-        this.opControl.setValue(newSelectedOps);
-        this.sendUpdate();
-      });
+    // this.railmlParserService.getRailmlEvents()
+    //   .subscribe(railml => {
+    //     let newSelectedOps = []
+    //     if (railml) {
+    //       this.opList = [...railml.ops.values()];
+    //       this.opList.sort();
+    //       for (let selectedOp of this.filter.selectedOps) {
+    //         if (railml.ops.has(selectedOp.id)) {
+    //           newSelectedOps.push(railml.ops.get(selectedOp.id));
+    //         }
+    //       }
+    //     } else {
+    //       this.opList = [];
+    //     }
+    //     this.filter.additionalOp = null;
+    //     this.filter.selectedOps = newSelectedOps;
+    //     this.opControl.setValue(newSelectedOps);
+    //     this.sendUpdate();
+    //   });
 
     this.opControl.registerOnChange(() => {
-      this.filter.selectedOps = this.opControl.value as OperatingPeriod[];
-      this.sendUpdate();
+      // this.filter.selectedOps = this.opControl.value as OperatingPeriod[];
+      // this.sendUpdate();
     });
   }
 
@@ -62,22 +52,16 @@ export class RailFilterComponent implements OnInit {
     RailFilterComponent.removeFirst(ops, op);
     this.opControl.setValue([]);
     this.opControl.setValue(ops); // To trigger change detection
-    // this.filter.selectedOps = ops;
-  }
-
-  sendUpdate() {
-    console.log('filter, sendUpdate', this.filter);
-    this.filterSubject.next(this.filter);
   }
 
   get combinedBitMask(): string | null {
-    let op = this.filter?.combinedOp;
-    if (op) {
-      return op.utfMask;
-    }
-    if (this.opList && this.opList.length > 0) {
-      return Array.from('\u25A0'.repeat(this.opList[0].bitMask.length)).join('')
-    }
+    // let op = this.filter?.;
+    // if (op) {
+    //   return op.utfMask;
+    // }
+    // if (this.opList && this.opList.length > 0) {
+    //   return Array.from('\u25A0'.repeat(this.opList[0].bitMask.length)).join('')
+    // }
     return '';
   }
 
@@ -89,33 +73,48 @@ export class RailFilterComponent implements OnInit {
   }
 
   clearSelection() {
-    this.singleDate = null;
-    this.filter.selectedOps = [];
-    this.filter.additionalOp = null;
-    this.opControl.setValue([]);
+    // this.singleDate = null;
+    // this.filter.selectedOps = [];
+    // this.filter.additionalOp = null;
+    // this.opControl.setValue([]);
+
+    this.appStore.filterUpdateSelectedOps([])
+    this.appStore.filterUpdateSingleDate(null)
   }
 
   onSelectionChange($event: any) {
-    this.filter.selectedOps = this.opControl.value as OperatingPeriod[];
-    this.sendUpdate();
-  }
-
-  clearTrainNumber() {
-    this.filter.trainNumber = '';
-    this.sendUpdate();
+    this.appStore.filterUpdateSelectedOps($event.value);
   }
 
   onDateChanged($event: any) {
-    let additionalOp: OperatingPeriod = null;
+    this.appStore.filterUpdateSingleDate($event.value);
 
-    if (!!$event.value && !!this.opList && this.opList.length > 0) {
-      let date: Date = $event.value;
-      let firstOp = this.opList[0];
-      additionalOp = new OperatingPeriod('gen', firstOp.startDate, firstOp.endDate, 'generated', 'generated', Array.from('0'.repeat(firstOp.bitMask.length)).join(''));
-      additionalOp.setBit(date, true);
-    }
+    // let additionalOp: OperatingPeriod = null;
+    //
+    // if (!!singleDate && !!this.opList && this.opList.length > 0) {
+    //   let firstOp = this.opList[0];
+    //   additionalOp = new OperatingPeriod('gen', firstOp.startDate, firstOp.endDate, 'generated', 'generated', Array.from('0'.repeat(firstOp.bitMask.length)).join(''));
+    //   additionalOp.setBit(singleDate, true);
+    // }
 
-    this.filter.additionalOp = additionalOp;
-    this.sendUpdate();
+
+    // this.filter.additionalOp = additionalOp;
+    // this.sendUpdate();
+  }
+
+  onTrainNumberChange(trainNumber: string) {
+    this.appStore.filterUpdateTrainNumber(trainNumber);
+  }
+
+  onShowRelatedChange(showRelated: boolean) {
+    this.appStore.filterUpdateShowRelated(showRelated);
+  }
+
+  onCombineOperationChanged($event: any) {
+    this.appStore.filterUpdateCombineOperation($event.value);
+  }
+
+  onOutsideOpGreyedOutChange(outsideOpGreyedOut: boolean) {
+    this.appStore.filterUpdateOutsideOpGreyedOut(outsideOpGreyedOut);
   }
 }

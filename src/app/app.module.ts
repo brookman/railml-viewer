@@ -50,31 +50,32 @@ import {OverlayModule} from '@angular/cdk/overlay';
 import {MondayFirstDateAdapter} from "./utils";
 import {FlexLayoutModule} from "@angular/flex-layout";
 import {GoogleMapsModule} from "@angular/google-maps";
-import { OpCalendarComponent } from './op-calendar/op-calendar.component';
-import { GooglemapComponent } from './googlemap/googlemap.component';
-import { DropzoneComponent } from './dropzone/dropzone.component';
-import { RailFilterComponent } from './rail-filter/rail-filter.component';
-import { TrainPartListComponent } from './train-part-list/train-part-list.component';
-import { TrainViewComponent } from './train-view/train-view.component';
+// import {OpCalendarComponent} from './op-calendar/op-calendar.component';
+import {GooglemapComponent} from './googlemap/googlemap.component';
+import {DropzoneComponent} from './dropzone/dropzone.component';
+import {RailFilterComponent} from './rail-filter/rail-filter.component';
+import {TrainPartListComponent} from './train-part-list/train-part-list.component';
+import {TrainViewComponent} from './train-view/train-view.component';
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
+import {AppStore} from "./app.store";
+import {CommonModule} from "@angular/common";
 
 @NgModule({
   declarations: [
     AppComponent,
-    OpCalendarComponent,
+    // OpCalendarComponent,
     GooglemapComponent,
     DropzoneComponent,
     RailFilterComponent,
     TrainPartListComponent,
-    TrainViewComponent
+    TrainViewComponent,
   ],
   imports: [
+    CommonModule,
     BrowserModule,
     BrowserAnimationsModule,
     HttpClientModule,
-
     GoogleMapsModule,
-
     ReactiveFormsModule,
 
     A11yModule,
@@ -124,7 +125,7 @@ import {FormsModule, ReactiveFormsModule} from "@angular/forms";
     FlexLayoutModule,
     FormsModule
   ],
-  providers: [{provide: DateAdapter, useClass: MondayFirstDateAdapter}],
+  providers: [{provide: DateAdapter, useClass: MondayFirstDateAdapter}, AppStore],
   bootstrap: [AppComponent]
 })
 export class AppModule {
