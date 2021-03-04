@@ -3,10 +3,12 @@ import {ComponentStore} from "@ngrx/component-store";
 import {OperatingPeriod, Railml, Train, TrainPart, TrainType} from "./railml.model";
 import {filter, map} from "rxjs/operators";
 import {Observable} from "rxjs";
+import {Station} from "./googlemap/googlemap.component";
 
 export interface AppSate {
   railml?: Railml,
   filter: RailFilterState,
+  map: MapState,
 }
 
 export interface RailFilterState {
@@ -15,6 +17,7 @@ export interface RailFilterState {
   selectedOps: OperatingPeriod[];
   singleDate?: Date;
   combineOperation: CombineOperation;
+  matchingMode: MatchingMode;
   outsideOpGreyedOut: boolean;
 }
 
@@ -23,8 +26,13 @@ export enum CombineOperation {
   Union = 'Union',
 }
 
+export enum MatchingMode {
+  Any = 'Any',
+  All = 'All',
+}
+
 export class TrainFilterResult {
-  operatingPeriod?: OperatingPeriod = null;
+  // operatingPeriod?: OperatingPeriod = null;
   trains: Train[] = [];
   commercialTrains: Train[] = [];
   operationalTrains: Train[] = [];
@@ -38,6 +46,15 @@ export class TrainFilterResult {
   }
 }
 
+export class MapState {
+  selectedTrains: Train[];
+  stations: Set<Station> = new Set();
+  showStations: boolean = false;
+  utcTime: number = 0;
+  min: number = 0;
+  max: number = 24 * 3600 * 1000;
+}
+
 
 @Injectable()
 export class AppStore extends ComponentStore<AppSate> {
@@ -45,12 +62,17 @@ export class AppStore extends ComponentStore<AppSate> {
   constructor() {
     super({
       railml: null,
-      filter: AppStore.getDefaultFilterState()
+      filter: AppStore.getDefaultFilterState(),
+      map: AppStore.getDefaultMapState(),
     });
   }
 
+
+  // Read: ------------------------------------------------------------------------------------------------
+
   readonly railml$ = this.select(state => state.railml).pipe(filter(o => !!o));
   readonly filter$ = this.select(state => state.filter);
+  readonly map$ = this.select(state => state.map);
 
   readonly operatingPeriods$: Observable<OperatingPeriod[]> = this.railml$.pipe(
     map((railml: Railml) => railml.sortedOps)
@@ -59,13 +81,16 @@ export class AppStore extends ComponentStore<AppSate> {
   readonly combinedOperatingPeriod$: Observable<OperatingPeriod | null> = this.select(
     this.operatingPeriods$,
     this.filter$,
-    this.getCombinedOp);
+    AppStore.getCombinedOp);
 
   readonly filteredTrains$: Observable<TrainFilterResult> = this.select(
     this.railml$,
     this.filter$,
     this.combinedOperatingPeriod$,
-    this.getFilteredTrains);
+    AppStore.getFilteredTrains);
+
+
+  // Write: ------------------------------------------------------------------------------------------------
 
   readonly filterUpdateTrainNumber = this.updater((state, trainNumber: string) => ({
     ...state, filter: {...state.filter, trainNumber},
@@ -79,19 +104,9 @@ export class AppStore extends ComponentStore<AppSate> {
     ...state, filter: {...state.filter, selectedOps},
   }));
 
-  readonly filterUpdateToggleSelectedOps = this.updater((state, selectedOp: OperatingPeriod) => {
-    let set = new Set(state.filter.selectedOps);
-    if (set.has(selectedOp)) {
-      set.delete(selectedOp);
-    } else {
-      set.add(selectedOp);
-    }
-    let selectedOps = Array.from(set);
-    selectedOps.sort();
-    return ({
-      ...state, filter: {...state.filter, selectedOps},
-    });
-  });
+  readonly filterUpdateToggleSelectedOps = this.updater((state, selectedOp: OperatingPeriod) => ({
+    ...state, filter: {...state.filter, selectedOps: AppStore.toggle(state.filter.selectedOps, selectedOp)},
+  }));
 
   readonly filterUpdateSingleDate = this.updater((state, singleDate?: Date) => ({
     ...state, filter: {...state.filter, singleDate},
@@ -99,6 +114,10 @@ export class AppStore extends ComponentStore<AppSate> {
 
   readonly filterUpdateCombineOperation = this.updater((state, combineOperation: CombineOperation) => ({
     ...state, filter: {...state.filter, combineOperation},
+  }));
+
+  readonly filterUpdateMatchingMode = this.updater((state, matchingMode: MatchingMode) => ({
+    ...state, filter: {...state.filter, matchingMode},
   }));
 
   readonly filterUpdateOutsideOpGreyedOut = this.updater((state, outsideOpGreyedOut: boolean) => ({
@@ -109,7 +128,10 @@ export class AppStore extends ComponentStore<AppSate> {
     ...state, railml, filter: {...state.filter, selectedOps: []},
   }));
 
-  private getCombinedOp(availableOps: OperatingPeriod[], railFilter: RailFilterState): OperatingPeriod | null {
+
+  // Mappers: ------------------------------------------------------------------------------------------------
+
+  private static getCombinedOp(availableOps: OperatingPeriod[], railFilter: RailFilterState): OperatingPeriod | null {
     if (availableOps.length === 0) {
       return null;
     }
@@ -145,7 +167,7 @@ export class AppStore extends ComponentStore<AppSate> {
     return new OperatingPeriod('combined', firstOp.startDate, firstOp.endDate, 'generated', 'generated', result.join(''));
   }
 
-  private getFilteredTrains(railml: Railml, railFilter: RailFilterState, op: OperatingPeriod | null): TrainFilterResult {
+  private static getFilteredTrains(railml: Railml, railFilter: RailFilterState, op: OperatingPeriod | null): TrainFilterResult {
     let trainNumberFilterString = railFilter.trainNumber.trim().toLowerCase();
 
     let result = new TrainFilterResult();
@@ -172,7 +194,7 @@ export class AppStore extends ComponentStore<AppSate> {
       for (let train of result.trains) {
         let hasIntersections = false;
         for (let trainPartRef of train.trainParts) {
-          if (trainPartRef.trainPart.op.intersectsWith(op)) {
+          if (railFilter.matchingMode === MatchingMode.Any ? trainPartRef.trainPart.op.intersectsWith(op) : trainPartRef.trainPart.op.contains(op)) {
             hasIntersections = true;
           } else if (railFilter.outsideOpGreyedOut) {
             result.greyedOutTrainParts.add(trainPartRef.trainPart);
@@ -188,7 +210,7 @@ export class AppStore extends ComponentStore<AppSate> {
         }
       }
       result.trains = filteredTrains;
-      result.operatingPeriod = op;
+      // result.operatingPeriod = op;
     }
 
     result.trains.sort((a, b) => a.trainNumber.localeCompare(b.trainNumber));
@@ -199,6 +221,18 @@ export class AppStore extends ComponentStore<AppSate> {
     return result;
   }
 
+  private static toggle<T>(list: T[], elementToToggle: T): T[] {
+    let set = new Set(list);
+    if (set.has(elementToToggle)) {
+      set.delete(elementToToggle);
+    } else {
+      set.add(elementToToggle);
+    }
+    let result = Array.from(set);
+    result.sort();
+    return result;
+  }
+
   public static getDefaultFilterState(): RailFilterState {
     return {
       trainNumber: '',
@@ -206,7 +240,19 @@ export class AppStore extends ComponentStore<AppSate> {
       selectedOps: [],
       singleDate: null,
       combineOperation: CombineOperation.Union,
+      matchingMode: MatchingMode.Any,
       outsideOpGreyedOut: true
+    }
+  }
+
+  public static getDefaultMapState(): MapState {
+    return {
+      selectedTrains: [],
+      stations: new Set(),
+      showStations: false,
+      utcTime: 0,
+      min: 0,
+      max: 24 * 3600 * 1000
     }
   }
 }

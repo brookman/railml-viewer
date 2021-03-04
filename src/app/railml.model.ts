@@ -293,6 +293,16 @@ export class OperatingPeriod {
     return false;
   }
 
+  public contains(otherOp: OperatingPeriod): boolean {
+    let diff = OperatingPeriod.dateDiffInDays(otherOp.startDate, this.startDate);
+    for (let i = 0; i < this.bitMask.length; i++) {
+      if (this.bitMask.charAt(i) === '1' && otherOp.bitMask.charAt(i + diff) !== '1') {
+        return false;
+      }
+    }
+    return true;
+  }
+
   private static dateDiffInDays(a: Date, b: Date) {
     const MS_PER_DAY = 1000 * 60 * 60 * 24;
     // Discard the time and time-zone information.

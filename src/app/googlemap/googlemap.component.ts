@@ -1,6 +1,7 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
 import {Train, TrainPart} from "../railml.model";
 import {GoogleMap} from "@angular/google-maps";
+import {AppStore} from "../app.store";
 
 export class Station {
   lat: number;
@@ -49,7 +50,6 @@ export class GooglemapComponent implements OnInit {
   trainCourses: TrainCourse[] = [];
 
   utcTime: number = 0;
-  lerpedTime = 0.0;
 
   min: number = 0;
   max: number = 24 * 3600 * 1000;
@@ -57,7 +57,12 @@ export class GooglemapComponent implements OnInit {
   private selectedTrains: Set<Train> = new Set();
   private selectedTrainParts: Set<TrainPart> = new Set();
 
-  constructor() {
+  readonly map$ = this.appStore.map$;
+
+  constructor(private readonly appStore: AppStore) {
+    this.appStore.map$.subscribe(map => {
+
+    })
   }
 
   ngOnInit(): void {
@@ -102,7 +107,6 @@ export class GooglemapComponent implements OnInit {
 
   private updateMap() {
     this.utcTime = 0;
-    this.lerpedTime = 0;
     this.stations.clear();
     this.trainCourses = [];
 

@@ -129,9 +129,9 @@ export class AppComponent implements AfterContentChecked, AfterViewInit {
   }
 
   operatingPeriodToColor(operatingPeriod: OperatingPeriod) {
-    if (!!this.filterResult?.operatingPeriod && !operatingPeriod.intersectsWith(this.filterResult.operatingPeriod)) {
-      return AppComponent.GREY;
-    }
+    // if (!!this.filterResult?.operatingPeriod && !operatingPeriod.intersectsWith(this.filterResult.operatingPeriod)) {
+    //   return AppComponent.GREY;
+    // }
     return Utils.hashToGradient(operatingPeriod.id);
   }
 

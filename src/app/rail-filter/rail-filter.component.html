@@ -2,8 +2,8 @@
   <mat-card-title>Filter</mat-card-title>
   <mat-card-content fxLayout="column" fxLayoutGap="2em">
 
-<!--    {{railml$ | async | json}}-->
-<!--    {{filter$ | async | json}}-->
+    <!--    {{railml$ | async | json}}-->
+    <!--    {{filter$ | async | json}}-->
 
     <div fxLayout="row" fxLayoutGap="2em" fxLayoutAlign="start center">
       <mat-form-field>
@@ -55,12 +55,22 @@
         </mat-select>
       </mat-form-field>
 
-      <mat-checkbox [ngModel]="(filter$ | async).outsideOpGreyedOut" (ngModelChange)="onOutsideOpGreyedOutChange($event)">Outside OP greyed out</mat-checkbox>
-
     </div>
 
     <div fxLayout="row" fxLayoutGap="0em" fxLayoutAlign="start center" *ngIf="(combinedOperatingPeriod$ | async)">
       <span style="font-size: 7px">{{(combinedOperatingPeriod$ | async).utfMask}}</span>
+    </div>
+
+    <div fxLayout="row" fxLayoutGap="2em" fxLayoutAlign="start center">
+      <mat-form-field>
+        <mat-label>Matching mode</mat-label>
+        <mat-select [value]="(filter$ | async).matchingMode" (selectionChange)="onMatchingModeChanged($event)">
+          <mat-option value="{{'Any'}}">Any</mat-option>
+          <mat-option value="{{'All'}}">All</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-checkbox [ngModel]="(filter$ | async).outsideOpGreyedOut" (ngModelChange)="onOutsideOpGreyedOutChange($event)">Outside OP greyed out</mat-checkbox>
     </div>
 
   </mat-card-content>
