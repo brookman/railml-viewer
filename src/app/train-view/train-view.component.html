@@ -2,6 +2,58 @@
   <mat-card-title>Trains</mat-card-title>
   <mat-card-content fxLayout="column">
 
+    <!--    <svg width="100%" height="400px" *ngIf="filterResult">-->
+    <!--      <g id='columnGroup'>-->
+    <!--        <text x='0' y='0' font-size='14px' font-weight='bold'>-->
+    <!--          <tspan x='0' dy='20' alignment-baseline='middle'>Number</tspan>-->
+    <!--          <ng-container *ngFor="let train of filterResult.commercialTrains; index as i;">-->
+    <!--            <tspan x='0' dy='20'>{{train.trainNumber}}</tspan>-->
+    <!--            <ng-container *ngFor="let sequence of train.trainPartSequences">-->
+    <!--              <ng-container *ngFor="let trainPartRef of sequence.trainParts">-->
+    <!--                <tspan x='0' dy='20'>&nbsp;</tspan>-->
+    <!--              </ng-container>-->
+    <!--            </ng-container>-->
+    <!--          </ng-container>-->
+    <!--        </text>-->
+
+    <!--        <text x='150' y='0' font-size='14px'>-->
+    <!--          <tspan x='150' dy='20' alignment-baseline='middle'>Name</tspan>-->
+    <!--          <ng-container *ngFor="let train of filterResult.commercialTrains; index as i;">-->
+    <!--            <tspan x='150' dy='20'>{{train.name}}</tspan>-->
+    <!--            <ng-container *ngFor="let sequence of train.trainPartSequences">-->
+    <!--              <ng-container *ngFor="let trainPartRef of sequence.trainParts">-->
+    <!--                <tspan x='150' dy='20'>&nbsp;</tspan>-->
+    <!--              </ng-container>-->
+    <!--            </ng-container>-->
+    <!--          </ng-container>-->
+    <!--        </text>-->
+
+    <!--        <text x='300' y='0' font-size='14px'>-->
+    <!--          <tspan x='300' dy='20'>Complexity</tspan>-->
+    <!--          <ng-container *ngFor="let train of filterResult.commercialTrains; index as i;">-->
+    <!--            <tspan x='300' dy='20'>{{train.complexity}}</tspan>-->
+    <!--            <ng-container *ngFor="let sequence of train.trainPartSequences">-->
+    <!--              <ng-container *ngFor="let trainPartRef of sequence.trainParts">-->
+    <!--                <tspan x='300' dy='20'>&nbsp;</tspan>-->
+    <!--              </ng-container>-->
+    <!--            </ng-container>-->
+    <!--          </ng-container>-->
+    <!--        </text>-->
+
+    <!--        <text x='450' y='0' font-size='14px'>-->
+    <!--          <tspan x='450' dy='20'>Sequence / train part</tspan>-->
+    <!--          <ng-container *ngFor="let train of filterResult.commercialTrains">-->
+    <!--            <ng-container *ngFor="let sequence of train.trainPartSequences; index as i;">-->
+    <!--              <ng-container *ngFor="let trainPartRef of sequence.trainParts; index as j;">-->
+    <!--                <tspan x='450' dy='20'>{{i + 1}} / {{trainPartRef.position}}</tspan>-->
+    <!--              </ng-container>-->
+    <!--            </ng-container>-->
+    <!--            <tspan x='450' dy='20'>&nbsp;</tspan>-->
+    <!--          </ng-container>-->
+    <!--        </text>-->
+    <!--      </g>-->
+    <!--    </svg>-->
+
     <div fxLayout="row">
       <table style="width:45%" mat-table matSort [dataSource]="commercialTrainsDataSource" (matSortChange)="onSortChange($event)" class="mat-elevation-z0">
 
@@ -12,6 +64,13 @@
               <strong *ngIf="highlightTrain(train)">{{train.trainNumber}}</strong>
               <ng-container *ngIf="!highlightTrain(train)">{{train.trainNumber}}</ng-container>
             </p>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="viewIcon">
+          <th mat-header-cell *matHeaderCellDef>View</th>
+          <td mat-cell *matCellDef="let train" style="background-color:{{getTrainColor(train)}}">
+            <p (click)="onTrainMapClicked(train, $event)" style="cursor: pointer;"><mat-icon>room</mat-icon></p>
           </td>
         </ng-container>
 
@@ -66,7 +125,7 @@
                 (click)="onTrainPartClicked(trainPart, $event)">
               {{trainPart.fromCode + ' - ' + trainPart.toCode}}</td>
 
-            <td style="width:60px;background:{{operatingPeriodToColor(trainPart.op)}}">
+            <td style="width:60px;height:25px;background:{{operatingPeriodToColor(trainPart.op)}}">
               <div (click)="onOpSelected(trainPart.op, $event)" style="cursor: pointer;">
                 <!--                        <strong *ngIf="trainPart.op === selectedOp">OP: {{trainPart.op.name}}</strong>-->
                 <!--                        <span *ngIf="trainPart.op !== selectedOp">OP: {{trainPart.op.name}}</span>-->

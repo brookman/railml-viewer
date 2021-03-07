@@ -104,7 +104,7 @@ export class AppStore extends ComponentStore<AppSate> {
   // Write: ------------------------------------------------------------------------------------------------
 
   readonly filterUpdateTrainNumber = this.updater((state, trainNumber: string) => ({
-    ...state, filter: {...state.filter, trainNumber},
+    ...state, filter: {...state.filter, trainNumber: state.filter.trainNumber === trainNumber ? '' : trainNumber},
   }));
 
   readonly filterUpdateShowRelated = this.updater((state, showRelated: boolean) => ({

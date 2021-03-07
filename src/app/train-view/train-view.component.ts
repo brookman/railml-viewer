@@ -2,8 +2,6 @@ import {AfterViewChecked, AfterViewInit, Component, ElementRef, QueryList, ViewC
 import {OperatingPeriod, Train, TrainPart, TrainType} from "../railml.model";
 import {MatTable, MatTableDataSource} from "@angular/material/table";
 import {MatSort} from "@angular/material/sort";
-import {BehaviorSubject} from "rxjs";
-import {debounceTime} from "rxjs/operators";
 import {MatPaginator} from "@angular/material/paginator";
 import {GooglemapComponent} from "../googlemap/googlemap.component";
 import {AppStore, TrainFilterResult} from "../app.store";
@@ -35,14 +33,14 @@ export class TrainViewComponent implements AfterViewInit, AfterViewChecked {
 
   commercialTrainsDataSource = new MatTableDataSource([]);
   operationalTrainsDataSource = new MatTableDataSource([]);
-  commercialColumns: string[] = ['trainNumber', 'name', 'complexity', 'sequences'];
+  commercialColumns: string[] = ['trainNumber', 'viewIcon', 'name', 'complexity', 'sequences'];
   operationalColumns: string[] = ['sequences', 'trainNumber', 'name', 'complexity'];
 
   filterResult?: TrainFilterResult;
   visibleTrainParts: TrainPart[] = [];
 
   lines: LeaderLine[] = [];
-  updateLinesSubject: BehaviorSubject<Object> = new BehaviorSubject<Object>(1);
+  // private updateLinesSubject: BehaviorSubject<Object> = new BehaviorSubject<Object>(1);
 
   private shouldUpdateLines = true;
 
@@ -53,50 +51,15 @@ export class TrainViewComponent implements AfterViewInit, AfterViewChecked {
   constructor(private appStore: AppStore) {
 
     this.appStore.filteredTrains$.subscribe(filterResult => {
-      this.removeLines();
       this.filterResult = filterResult;
       this.commercialTrainsDataSource.data = filterResult.commercialTrains;
       this.operationalTrainsDataSource.data = filterResult.operationalTrains;
-      this.regenerateVisibleTrainParts();
-      this.shouldUpdateLines = true;
     });
 
-    this.updateLinesSubject
-      .pipe(debounceTime(100))
-      .subscribe(_ => {
-        if (!this.shouldUpdateLines) {
-          return;
-        }
-        this.removeLines();
-
-        if (this.tpElements) {
-          let mapTp = new Map<string, ElementRef>();
-          let mapTpCo = new Map<string, ElementRef>();
-          let mapTpOp = new Map<string, ElementRef>();
-
-          for (let tpElement of this.tpElements) {
-            mapTp.set(tpElement.nativeElement.getAttribute('data-tpid'), tpElement);
-          }
-
-          for (let tpElement of this.tpElementsCo) {
-            mapTpCo.set(tpElement.nativeElement.getAttribute('data-tpid'), tpElement);
-          }
-
-          for (let tpElement of this.tpElementsOp) {
-            mapTpOp.set(tpElement.nativeElement.getAttribute('data-tpid'), tpElement);
-          }
-
-          for (let [id, element] of mapTp) {
-            if (mapTpCo.has(id)) {
-              this.addLine(mapTpCo.get(id).nativeElement, element.nativeElement);
-            }
-
-            if (mapTpOp.has(id)) {
-              this.addLine(element.nativeElement, mapTpOp.get(id).nativeElement);
-            }
-          }
-        }
-        this.shouldUpdateLines = false;
+    this.commercialTrainsDataSource.connect()
+      .subscribe((trains: Train[]) => {
+        this.regenerateVisibleTrainParts(trains);
+        this.shouldUpdateLines = true;
       });
   }
 
@@ -116,6 +79,49 @@ export class TrainViewComponent implements AfterViewInit, AfterViewChecked {
 
   ngAfterViewChecked() {
     this.updateLines();
+  }
+
+  updateLines() {
+    if (!this.shouldUpdateLines) {
+      return;
+    }
+    this.shouldUpdateLines = false;
+
+    (async () => {
+      await this.delay(100);
+      this.removeLines();
+      if (this.tpElements) {
+        let mapTp = new Map<string, ElementRef>();
+        let mapTpCo = new Map<string, ElementRef>();
+        let mapTpOp = new Map<string, ElementRef>();
+
+        for (let tpElement of this.tpElements) {
+          mapTp.set(tpElement.nativeElement.getAttribute('data-tpid'), tpElement);
+        }
+
+        for (let tpElement of this.tpElementsCo) {
+          mapTpCo.set(tpElement.nativeElement.getAttribute('data-tpid'), tpElement);
+        }
+
+        for (let tpElement of this.tpElementsOp) {
+          mapTpOp.set(tpElement.nativeElement.getAttribute('data-tpid'), tpElement);
+        }
+
+        for (let [id, element] of mapTp) {
+          if (mapTpCo.has(id)) {
+            this.addLine(mapTpCo.get(id).nativeElement, element.nativeElement);
+          }
+
+          if (mapTpOp.has(id)) {
+            this.addLine(element.nativeElement, mapTpOp.get(id).nativeElement);
+          }
+        }
+      }
+    })();
+  }
+
+  private delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   highlightTrain(train: Train) {
@@ -160,13 +166,9 @@ export class TrainViewComponent implements AfterViewInit, AfterViewChecked {
     this.updateLines();
   }
 
-  private updateLines() {
-    this.updateLinesSubject.next(1);
-  }
-
-  private regenerateVisibleTrainParts() {
+  private regenerateVisibleTrainParts(trains: Train[]) {
     this.visibleTrainParts = [];
-    for (let train of this.commercialTrainsDataSource.filteredData) {
+    for (let train of trains) {
       if (train.type === TrainType.COMMERCIAL) {
         for (let trainPart of train.trainParts) {
           this.visibleTrainParts.push(trainPart.trainPart);
@@ -190,6 +192,10 @@ export class TrainViewComponent implements AfterViewInit, AfterViewChecked {
   }
 
   onTrainClicked(train: Train, $event: MouseEvent) {
+    this.appStore.filterUpdateTrainNumber(train.trainNumber);
+  }
+
+  onTrainMapClicked(train: Train, $event: MouseEvent) {
     if ($event.shiftKey) {
       this.appStore.mapToggleTrain(train);
     } else {
