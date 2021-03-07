@@ -403,6 +403,22 @@ export class OcpTT {
     this.departure = iOcpTT.times[1].attributes.departure;
     this.ocp = ocp;
   }
+
+  get departureUtc(): number | undefined {
+    return OcpTT.getUTC(this.departure ? this.departure : this.arrival)
+  }
+
+  get arrivalUtc(): number | undefined {
+    return OcpTT.getUTC(this.arrival ? this.arrival : this.departure)
+  }
+
+  private static getUTC(time: string | undefined): number | undefined {
+    if (time === undefined) {
+      return undefined;
+    }
+    const ts = time.split(':');
+    return Date.UTC(1970, 0, 1, parseInt(ts[0]), parseInt(ts[1]), parseInt(ts[2]));
+  }
 }
 
 export class Train {

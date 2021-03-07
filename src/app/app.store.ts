@@ -3,7 +3,6 @@ import {ComponentStore} from "@ngrx/component-store";
 import {OperatingPeriod, Railml, Train, TrainPart, TrainType} from "./railml.model";
 import {filter, map} from "rxjs/operators";
 import {Observable} from "rxjs";
-import {Station} from "./googlemap/googlemap.component";
 
 export interface AppSate {
   railml?: Railml,
@@ -47,8 +46,8 @@ export class TrainFilterResult {
 }
 
 export class MapState {
-  selectedTrains: Train[];
-  stations: Set<Station> = new Set();
+  selectedTrains: Train[] = [];
+  stations: Train[] = [];
   showStations: boolean = false;
   utcTime: number = 0;
   min: number = 0;
@@ -89,6 +88,18 @@ export class AppStore extends ComponentStore<AppSate> {
     this.combinedOperatingPeriod$,
     AppStore.getFilteredTrains);
 
+  readonly timeUtc$: Observable<number> = this.select(
+    this.map$,
+    m => m.utcTime);
+
+  readonly selectedTrains$: Observable<Train[]> = this.select(
+    this.map$,
+    m => m.selectedTrains);
+
+  readonly showStations$: Observable<boolean> = this.select(
+    this.map$,
+    m => m.showStations);
+
 
   // Write: ------------------------------------------------------------------------------------------------
 
@@ -122,6 +133,22 @@ export class AppStore extends ComponentStore<AppSate> {
 
   readonly filterUpdateOutsideOpGreyedOut = this.updater((state, outsideOpGreyedOut: boolean) => ({
     ...state, filter: {...state.filter, outsideOpGreyedOut},
+  }));
+
+  readonly mapSelectTrain = this.updater((state, train: Train) => ({
+    ...state, map: AppStore.updateMapStateFromTrains(state.map, [train]),
+  }));
+
+  readonly mapToggleTrain = this.updater((state, train: Train) => ({
+    ...state, map: AppStore.updateMapStateFromTrains(state.map, AppStore.toggle(state.map.selectedTrains, train)),
+  }));
+
+  readonly mapSetTime = this.updater((state, time: number) => ({
+    ...state, map: {...state.map, utcTime: time}
+  }));
+
+  readonly mapUpdateShowStations = this.updater((state, showStations: boolean) => ({
+    ...state, map: {...state.map, showStations},
   }));
 
   readonly railmlUpdate = this.updater((state, railml: Railml) => ({
@@ -233,6 +260,29 @@ export class AppStore extends ComponentStore<AppSate> {
     return result;
   }
 
+  private static updateMapStateFromTrains(mapState: MapState, selectedTrains: Train[]): MapState {
+    let min = 24 * 3600 * 1000;
+    let max = 0;
+    for (let train of selectedTrains) {
+      for (let trainPart of train.trainParts) {
+        for (let ocpTT of trainPart.trainPart.ocpTTs) {
+          min = Math.min(min, ocpTT.arrivalUtc);
+          max = Math.max(max, ocpTT.departureUtc);
+        }
+      }
+    }
+
+    if (min >= max) {
+      min = 0;
+      max = 24 * 3600 * 1000;
+    }
+
+    return {...mapState, selectedTrains: selectedTrains, min, max, utcTime: min}
+  }
+
+
+  // --------------------------------------------------
+
   public static getDefaultFilterState(): RailFilterState {
     return {
       trainNumber: '',
@@ -248,7 +298,7 @@ export class AppStore extends ComponentStore<AppSate> {
   public static getDefaultMapState(): MapState {
     return {
       selectedTrains: [],
-      stations: new Set(),
+      stations: [],
       showStations: false,
       utcTime: 0,
       min: 0,

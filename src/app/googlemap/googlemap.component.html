@@ -1,13 +1,21 @@
 <mat-card>
   <mat-card-title>Map</mat-card-title>
-  <mat-card-content>
-    <mat-slider style="width:100%"
-                thumbLabel
-                [displayWith]="formatTime"
-                tickInterval="1"
-                min="{{min}}"
-                max="{{max}}"
-                [(value)]="utcTime" (input)="onSliderValueChanged($event.value)"></mat-slider>
+  <mat-card-content fxLayout="column">
+
+    <div fxLayout="row">
+      <span>{{formatTime((map$ | async).min)}}</span>
+      <mat-slider style="width:100%"
+                  thumbLabel
+                  [displayWith]="formatTime"
+                  tickInterval="1"
+                  min="{{(map$ | async).min}}"
+                  max="{{(map$ | async).max}}"
+                  [value]="timeUtc$ | async" (input)="onSliderValueChange($event.value)"></mat-slider>
+      <span>{{formatTime((map$ | async).max)}}</span>
+    </div>
+
+    <mat-checkbox [ngModel]="(map$ | async).showStations" (ngModelChange)="onShowStationsChange($event)">Show stations</mat-checkbox>
+
 
     <google-map [options]="mapOptions" width="100%">
 
@@ -25,12 +33,14 @@
 
       </ng-container>
 
-      <!--      <map-marker *ngFor="let station of stations"-->
-      <!--                  [position]="station"-->
-      <!--                  [title]="station.name"-->
-      <!--                  [label]="station.code"-->
-      <!--                  [clickable]="true"-->
-      <!--                  [options]="{draggable: false}"></map-marker>-->
+      <ng-container *ngIf="(map$ | async).showStations">
+        <map-marker *ngFor="let station of stations"
+                    [position]="station"
+                    [title]="station.name"
+                    [label]="station.code"
+                    [clickable]="true"
+                    [options]="{draggable: false}"></map-marker>
+      </ng-container>
 
     </google-map>
   </mat-card-content>
