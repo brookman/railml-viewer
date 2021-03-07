@@ -126,7 +126,7 @@ export class TrainViewComponent implements AfterViewInit, AfterViewChecked {
     if (this.filterResult?.greyedOutTrainParts.has(trainPart)) {
       return TrainViewComponent.GREY;
     }
-    return Utils.hashToGradient(trainPart.id);
+    return Utils.hashToColor(trainPart.id);
   }
 
   sequenceToColor(sequence: number): string {
@@ -137,7 +137,7 @@ export class TrainViewComponent implements AfterViewInit, AfterViewChecked {
     // if (!!this.filterResult?.operatingPeriod && !operatingPeriod.intersectsWith(this.filterResult.operatingPeriod)) {
     //   return AppComponent.GREY;
     // }
-    return Utils.hashToGradient(operatingPeriod.id);
+    return Utils.hashToColor(operatingPeriod.id);
   }
 
   getTrainColor(train: Train) {

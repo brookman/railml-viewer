@@ -1,7 +1,8 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
-import {Train, TrainPart} from "../railml.model";
+import {TrainPart} from "../railml.model";
 import {GoogleMap} from "@angular/google-maps";
 import {AppStore} from "../app.store";
+import {Utils} from "../utils";
 
 export class Station {
   lat: number;
@@ -19,8 +20,8 @@ export class Stop {
 }
 
 export class TrainCourse {
-  name: string;
   stops: Stop[];
+  color: string;
 
   trainPosition: { lat: number, lng: number } = undefined;
   offset: { lat: number, lng: number } = undefined;
@@ -53,11 +54,11 @@ export class GooglemapComponent implements OnInit {
 
   readonly map$ = this.appStore.map$;
   readonly timeUtc$ = this.appStore.timeUtc$;
-  readonly selectedTrains$ = this.appStore.selectedTrains$;
+  readonly selectedTrainParts$ = this.appStore.selectedTrainParts$;
 
   constructor(private readonly appStore: AppStore) {
-    this.selectedTrains$.subscribe(selectedTrains => {
-      this.updateMap(new Set<Train>(selectedTrains));
+    this.selectedTrainParts$.subscribe(selectedTrainParts => {
+      this.updateMap(new Set<TrainPart>(selectedTrainParts));
       this.updateCourses(0);
     })
     this.timeUtc$.subscribe(time => {
@@ -68,38 +69,36 @@ export class GooglemapComponent implements OnInit {
   ngOnInit(): void {
   }
 
-  private updateMap(selectedTrains: Set<Train>) {
+  private updateMap(selectedTrainParts: Set<TrainPart>) {
     this.stations.clear();
     this.trainCourses = [];
 
-    for (let train of selectedTrains) {
+    for (let trainPart of selectedTrainParts) {
       let trainCourse = new TrainCourse();
-      trainCourse.name = train.id + ' ' + train.name + ' ' + train.trainNumber;
       trainCourse.stops = [];
-      for (let trainPartRef of train.trainParts) {
-        let trainPart = trainPartRef.trainPart;
-        for (let ocpTT of trainPart.ocpTTs) {
-          let ocp = ocpTT.ocp;
-          if (ocpTT.ocpType === 'stop') {
-            let previousStop = trainCourse.stops.length > 0 ? trainCourse.stops[trainCourse.stops.length - 1] : undefined;
-            if (previousStop?.station.code === ocp.code) {
-              previousStop.departure = ocpTT.departureUtc;
-            } else {
-              let station: Station = {
-                lat: ocp.lat,
-                lng: ocp.lon,
-                code: ocp.code,
-                name: ocp.name,
-              };
-              this.stations.add(station);
-              trainCourse.stops.push({
-                station: station,
-                arrival: ocpTT.arrivalUtc,
-                departure: ocpTT.departureUtc,
-                trainNumber: trainPart.operationalUses + ' ' + trainPart.commercialUses,
-                trainPartId: trainPart.id,
-              });
-            }
+      trainCourse.color = Utils.hashToColor(trainPart.id)
+
+      for (let ocpTT of trainPart.ocpTTs) {
+        let ocp = ocpTT.ocp;
+        if (ocpTT.ocpType === 'stop') {
+          let previousStop = trainCourse.stops.length > 0 ? trainCourse.stops[trainCourse.stops.length - 1] : undefined;
+          if (previousStop?.station.code === ocp.code) {
+            previousStop.departure = ocpTT.departureUtc;
+          } else {
+            let station: Station = {
+              lat: ocp.lat,
+              lng: ocp.lon,
+              code: ocp.code,
+              name: ocp.name,
+            };
+            this.stations.add(station);
+            trainCourse.stops.push({
+              station: station,
+              arrival: ocpTT.arrivalUtc,
+              departure: ocpTT.departureUtc,
+              trainNumber: trainPart.operationalUses + ' ' + trainPart.commercialUses,
+              trainPartId: trainPart.id,
+            });
           }
         }
       }
@@ -134,16 +133,21 @@ export class GooglemapComponent implements OnInit {
           }
         }
 
-        course.currentStop = nextStop;
-        course.trainPosition = {
-          lat: previousStop.station.lat * (1.0 - ratio) + nextStop.station.lat * ratio,
-          lng: previousStop.station.lng * (1.0 - ratio) + nextStop.station.lng * ratio
-        };
-        course.offset = {
-          lat: course.trainPosition.lat + Math.cos(2.0 * offset / this.trainCourses.length * Math.PI + Math.PI * 0.25) * 0.05,
-          lng: course.trainPosition.lng + Math.sin(2.0 * offset / this.trainCourses.length * Math.PI + Math.PI * 0.25) * 0.05,
-        };
-        offset++;
+        if (previousStop === nextStop && previousStop === course.stops[0] || timeUtc > nextStop.departure + 600000) {
+          course.trainPosition = undefined;
+          course.offset = undefined;
+        } else {
+          course.currentStop = nextStop;
+          course.trainPosition = {
+            lat: previousStop.station.lat * (1.0 - ratio) + nextStop.station.lat * ratio,
+            lng: previousStop.station.lng * (1.0 - ratio) + nextStop.station.lng * ratio
+          };
+          course.offset = {
+            lat: course.trainPosition.lat + Math.cos(2.0 * offset / this.trainCourses.length * Math.PI + Math.PI * 0.25) * 0.05,
+            lng: course.trainPosition.lng + Math.sin(2.0 * offset / this.trainCourses.length * Math.PI + Math.PI * 0.25) * 0.05,
+          };
+          offset++;
+        }
       }
     }
   }

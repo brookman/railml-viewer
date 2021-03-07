@@ -20,7 +20,7 @@
     <google-map [options]="mapOptions" width="100%">
 
       <ng-container *ngFor="let trainCourse of trainCourses">
-        <map-polyline [path]="trainCourse.stations" [options]="{strokeColor:'#ff0000'}"></map-polyline>
+        <map-polyline [path]="trainCourse.stations" [options]="{strokeColor:trainCourse.color}"></map-polyline>
 
         <map-marker *ngIf="trainCourse.trainPosition"
                     [position]="trainCourse.offset"
@@ -29,7 +29,7 @@
                     [clickable]="true"
                     [options]="{draggable: false}"></map-marker>
 
-        <map-polyline [path]="[trainCourse.trainPosition, trainCourse.offset]" [options]="{strokeColor:'#555555'}"></map-polyline>
+        <map-polyline *ngIf="trainCourse.trainPosition" [path]="[trainCourse.trainPosition, trainCourse.offset]" [options]="{strokeColor:'#555555'}"></map-polyline>
 
       </ng-container>
 

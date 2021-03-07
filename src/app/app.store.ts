@@ -47,7 +47,7 @@ export class TrainFilterResult {
 
 export class MapState {
   selectedTrains: Train[] = [];
-  stations: Train[] = [];
+  selectedTrainParts: TrainPart[] = [];
   showStations: boolean = false;
   utcTime: number = 0;
   min: number = 0;
@@ -92,13 +92,13 @@ export class AppStore extends ComponentStore<AppSate> {
     this.map$,
     m => m.utcTime);
 
-  readonly selectedTrains$: Observable<Train[]> = this.select(
+  readonly selectedTrainParts$: Observable<TrainPart[]> = this.select(
     this.map$,
-    m => m.selectedTrains);
+    m => m.selectedTrainParts);
 
-  readonly showStations$: Observable<boolean> = this.select(
-    this.map$,
-    m => m.showStations);
+  // readonly showStations$: Observable<boolean> = this.select(
+  //   this.map$,
+  //   m => m.showStations);
 
 
   // Write: ------------------------------------------------------------------------------------------------
@@ -263,9 +263,14 @@ export class AppStore extends ComponentStore<AppSate> {
   private static updateMapStateFromTrains(mapState: MapState, selectedTrains: Train[]): MapState {
     let min = 24 * 3600 * 1000;
     let max = 0;
+
+    let selectedTrainParts = [];
+
     for (let train of selectedTrains) {
-      for (let trainPart of train.trainParts) {
-        for (let ocpTT of trainPart.trainPart.ocpTTs) {
+      for (let trainPartRef of train.trainParts) {
+        let trainPart = trainPartRef.trainPart
+        selectedTrainParts.push(trainPart)
+        for (let ocpTT of trainPart.ocpTTs) {
           min = Math.min(min, ocpTT.arrivalUtc);
           max = Math.max(max, ocpTT.departureUtc);
         }
@@ -277,7 +282,7 @@ export class AppStore extends ComponentStore<AppSate> {
       max = 24 * 3600 * 1000;
     }
 
-    return {...mapState, selectedTrains: selectedTrains, min, max, utcTime: min}
+    return {...mapState, selectedTrains, selectedTrainParts, min, max, utcTime: min}
   }
 
 
@@ -298,7 +303,7 @@ export class AppStore extends ComponentStore<AppSate> {
   public static getDefaultMapState(): MapState {
     return {
       selectedTrains: [],
-      stations: [],
+      selectedTrainParts: [],
       showStations: false,
       utcTime: 0,
       min: 0,

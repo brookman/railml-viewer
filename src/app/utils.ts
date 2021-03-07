@@ -58,7 +58,7 @@ export class Utils {
 
   public static getColorFromHash(hash: number, saturation?: string, lightness?: string): string {
     let shortened = hash % 360;
-    return 'hsl(' + shortened + ',100%,80%)'
+    return 'hsl(' + shortened + ',100%,70%)'
   }
 
   public static getGradientFromHash(hash: number, saturation?: string, lightness?: string): string {
