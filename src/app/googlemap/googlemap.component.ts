@@ -133,7 +133,7 @@ export class GooglemapComponent implements OnInit {
           }
         }
 
-        if (previousStop === nextStop && previousStop === course.stops[0] || timeUtc > nextStop.departure + 600000) {
+        if (previousStop === nextStop && previousStop === course.stops[0] || timeUtc > nextStop.departure + 300000) {
           course.trainPosition = undefined;
           course.offset = undefined;
         } else {
