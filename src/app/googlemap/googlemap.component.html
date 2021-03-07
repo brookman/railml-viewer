@@ -28,9 +28,6 @@
                     [label]="{text: trainCourse.currentStop.trainNumber, color: 'black', fontSize: '8px'}"
                     [clickable]="true"
                     [options]="{draggable: false}"></map-marker>
-
-        <map-polyline *ngIf="trainCourse.trainPosition" [path]="[trainCourse.trainPosition, trainCourse.offset]" [options]="{strokeColor:'#555555'}"></map-polyline>
-
       </ng-container>
 
       <ng-container *ngIf="(map$ | async).showStations">
@@ -40,6 +37,10 @@
                     [label]="station.code"
                     [clickable]="true"
                     [options]="{draggable: false}"></map-marker>
+      </ng-container>
+
+      <ng-container *ngFor="let trainCourse of trainCourses">
+        <map-polyline *ngIf="trainCourse.trainPosition" [path]="[trainCourse.trainPosition, trainCourse.offset]" [options]="{strokeColor:'#555555'}"></map-polyline>
       </ng-container>
 
     </google-map>

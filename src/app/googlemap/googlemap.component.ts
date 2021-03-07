@@ -47,10 +47,7 @@ export class GooglemapComponent implements OnInit {
   };
 
   stations: Set<Station> = new Set();
-
   trainCourses: TrainCourse[] = [];
-
-  private selectedTrainParts: Set<TrainPart> = new Set();
 
   readonly map$ = this.appStore.map$;
   readonly timeUtc$ = this.appStore.timeUtc$;
