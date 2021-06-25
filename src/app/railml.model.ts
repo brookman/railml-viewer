@@ -129,6 +129,7 @@ export interface ITrain {
     id: string,
     type: TrainTypeString,
     trainNumber: string,
+    additionalTrainNumber?: string,
     name: string,
   }
   trainPartSequence: ITrainPartSequence | ITrainPartSequence[];
@@ -345,15 +346,15 @@ export class TrainPart {
     }
 
     this.stops = this.ocpTTs
-      .filter(ocpTT => ocpTT.ocpType === 'stop');
+    .filter(ocpTT => ocpTT.ocpType === 'stop');
 
     this.ocpTTList = this.ocpTTs
-      .map(o => o.ocp.code + ' - ' + o.ocp.name)
-      .join('\n');
+    .map(o => o.ocp.code + ' - ' + o.ocp.name)
+    .join('\n');
 
     this.stopList = this.stops
-      .map(o => o.ocp.code + ' - ' + o.ocp.name)
-      .join('\n');
+    .map(o => o.ocp.code + ' - ' + o.ocp.name)
+    .join('\n');
   }
 
   get from(): string {
@@ -378,14 +379,14 @@ export class TrainPart {
 
   public updateReferencedBy(): void {
     this.commercialUses = [...this.referencedBy]
-      .filter(t => t.type === TrainType.COMMERCIAL)
-      .map(t => t.trainNumber)
-      .join(' ');
+    .filter(t => t.type === TrainType.COMMERCIAL)
+    .map(t => t.trainNumber)
+    .join(' ');
 
     this.operationalUses = [...this.referencedBy]
-      .filter(t => t.type === TrainType.OPERATIONAL)
-      .map(t => t.trainNumber)
-      .join(' ');
+    .filter(t => t.type === TrainType.OPERATIONAL)
+    .map(t => t.trainNumber)
+    .join(' ');
   }
 }
 
@@ -435,7 +436,7 @@ export class Train {
   constructor(iTrain: ITrain, trainParts: Map<string, TrainPart>) {
     this.id = iTrain.attributes.id;
     this.type = iTrain.attributes.type === 'operational' ? TrainType.OPERATIONAL : TrainType.COMMERCIAL;
-    this.trainNumber = iTrain.attributes.trainNumber;
+    this.trainNumber = iTrain.attributes.trainNumber + (iTrain.attributes.additionalTrainNumber ? (' - ' + iTrain.attributes.additionalTrainNumber) : '');
     this.name = iTrain.attributes.name;
 
     // TrainPartSequences
