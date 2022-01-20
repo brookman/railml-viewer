@@ -93,7 +93,7 @@ export class GooglemapComponent implements OnInit {
               station: station,
               arrival: ocpTT.arrivalUtc,
               departure: ocpTT.departureUtc,
-              trainNumber: trainPart.operationalUses + ' ' + trainPart.commercialUses,
+              trainNumber: trainPart.commercialTrainNumber + ' ' + trainPart.operationalTrainNumber,
               trainPartId: trainPart.id,
             });
           }

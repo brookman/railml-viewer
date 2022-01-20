@@ -59,6 +59,9 @@ import {TrainViewComponent} from './train-view/train-view.component';
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {AppStore} from "./app.store";
 import {CommonModule} from "@angular/common";
+import {GraphComponent} from "./graph/graph.component";
+import { CytoscapeAngularModule } from 'cytoscape-angular';
+
 
 @NgModule({
   declarations: [
@@ -69,6 +72,7 @@ import {CommonModule} from "@angular/common";
     RailFilterComponent,
     TrainPartListComponent,
     TrainViewComponent,
+    GraphComponent,
   ],
   imports: [
     CommonModule,
@@ -77,6 +81,7 @@ import {CommonModule} from "@angular/common";
     HttpClientModule,
     GoogleMapsModule,
     ReactiveFormsModule,
+    CytoscapeAngularModule,
 
     A11yModule,
     ClipboardModule,

@@ -316,7 +316,8 @@ export class OperatingPeriod {
 
 export class TrainPart {
   id: string;
-  trainNumber: string;
+  commercialTrainNumber: string;
+  operationalTrainNumber: string;
   name: string;
   line: string;
   op: OperatingPeriod;
@@ -324,15 +325,13 @@ export class TrainPart {
   ocpTTs: OcpTT[] = [];
   stops: OcpTT[] = [];
   referencedBy: Set<Train> = new Set();
+  position: number;
 
   ocpTTList: string;
   stopList: string;
-  commercialUses: string;
-  operationalUses: string;
 
   constructor(iTrainPart: ITrainPart, op: OperatingPeriod, ocps: Map<string, Ocp>) {
     this.id = iTrainPart.attributes.id;
-    this.trainNumber = iTrainPart.attributes.trainNumber;
     this.name = iTrainPart.attributes.name;
     this.line = iTrainPart.attributes.line;
     this.op = op;
@@ -346,15 +345,15 @@ export class TrainPart {
     }
 
     this.stops = this.ocpTTs
-    .filter(ocpTT => ocpTT.ocpType === 'stop');
+      .filter(ocpTT => ocpTT.ocpType === 'stop');
 
     this.ocpTTList = this.ocpTTs
-    .map(o => o.ocp.code + ' - ' + o.ocp.name)
-    .join('\n');
+      .map(o => o.ocp.code + ' - ' + o.ocp.name)
+      .join('\n');
 
     this.stopList = this.stops
-    .map(o => o.ocp.code + ' - ' + o.ocp.name)
-    .join('\n');
+      .map(o => o.ocp.code + ' - ' + o.ocp.name)
+      .join('\n');
   }
 
   get from(): string {
@@ -378,15 +377,15 @@ export class TrainPart {
   }
 
   public updateReferencedBy(): void {
-    this.commercialUses = [...this.referencedBy]
-    .filter(t => t.type === TrainType.COMMERCIAL)
-    .map(t => t.trainNumber)
-    .join(' ');
+    this.commercialTrainNumber = [...this.referencedBy]
+      .filter(t => t.type === TrainType.COMMERCIAL)
+      .map(t => t.trainNumber)
+      .find(_ => true);
 
-    this.operationalUses = [...this.referencedBy]
-    .filter(t => t.type === TrainType.OPERATIONAL)
-    .map(t => t.trainNumber)
-    .join(' ');
+    this.operationalTrainNumber = [...this.referencedBy]
+      .filter(t => t.type === TrainType.OPERATIONAL)
+      .map(t => t.trainNumber)
+      .find(_ => true);
   }
 }
 
@@ -576,7 +575,7 @@ export class Railml {
 
   trainList: Train[] = [];
   operationalTrainList: Train[] = [];
-  commercialTrainTrainList: Train[] = [];
+  commercialTrainList: Train[] = [];
 
   constructor(iRailmlDocument: IRailmlDocument) {
     let iTimetablePeriod = Util.toArray(iRailmlDocument.railml.timetable.timetablePeriods.timetablePeriod)[0]; // there should be exactly one
@@ -614,14 +613,14 @@ export class Railml {
       } else if (train.type === TrainType.COMMERCIAL) {
         this.commercialTrains.set(train.id, train);
         this.commercialTrainNumbers.add(train.trainNumber);
-        this.commercialTrainTrainList.push(train);
+        this.commercialTrainList.push(train);
       }
       this.trainList.push(train);
     }
 
     this.trainList.sort((a, b) => a.trainNumber.localeCompare(b.trainNumber));
     this.operationalTrainList.sort((a, b) => a.trainNumber.localeCompare(b.trainNumber));
-    this.commercialTrainTrainList.sort((a, b) => a.trainNumber.localeCompare(b.trainNumber));
+    this.commercialTrainList.sort((a, b) => a.trainNumber.localeCompare(b.trainNumber));
 
     // Create TrainPart->Train references
     for (let train of this.trains.values()) {

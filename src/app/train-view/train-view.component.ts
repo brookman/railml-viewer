@@ -33,8 +33,8 @@ export class TrainViewComponent implements AfterViewInit, AfterViewChecked {
 
   commercialTrainsDataSource = new MatTableDataSource([]);
   operationalTrainsDataSource = new MatTableDataSource([]);
-  commercialColumns: string[] = ['trainNumber', 'viewIcon', 'name', 'complexity', 'sequences'];
-  operationalColumns: string[] = ['sequences', 'trainNumber', 'name', 'complexity'];
+  commercialColumns: string[] = ['trainNumber', 'viewIcon', 'complexity', 'sequences'];
+  operationalColumns: string[] = ['sequences', 'trainNumber', 'complexity'];
 
   filterResult?: TrainFilterResult;
   visibleTrainParts: TrainPart[] = [];

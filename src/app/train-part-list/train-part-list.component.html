@@ -35,19 +35,14 @@
           <td mat-cell *matCellDef="let trainPart">{{trainPart.line}}</td>
         </ng-container>
 
-        <ng-container matColumnDef="timesReferenced">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Used # times</th>
-          <td mat-cell *matCellDef="let trainPart">{{trainPart.timesReferenced}}</td>
+        <ng-container matColumnDef="commercialTrainNumber">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Commercial train number</th>
+          <td mat-cell *matCellDef="let trainPart">{{trainPart.commercialTrainNumber}}</td>
         </ng-container>
 
-        <ng-container matColumnDef="commercialUses">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Commercial uses</th>
-          <td mat-cell *matCellDef="let trainPart">{{trainPart.commercialUses}}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="operationalUses">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Operational uses</th>
-          <td mat-cell *matCellDef="let trainPart">{{trainPart.operationalUses}}</td>
+        <ng-container matColumnDef="operationalTrainNumber">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Operational train number</th>
+          <td mat-cell *matCellDef="let trainPart">{{trainPart.operationalTrainNumber}}</td>
         </ng-container>
 
         <ng-container matColumnDef="op">

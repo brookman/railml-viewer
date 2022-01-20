@@ -13,7 +13,7 @@ import {MatPaginator} from "@angular/material/paginator";
 })
 export class TrainPartListComponent implements OnInit, AfterViewInit {
   dataSource = new MatTableDataSource([]);
-  displayedColumns: string[] = ['id', 'name', 'from', 'to', 'line', 'timesReferenced', 'commercialUses', 'operationalUses', 'op', 'ocpTTs', 'stops', 'cancellation'];
+  displayedColumns: string[] = ['id', 'name', 'from', 'to', 'line', 'commercialTrainNumber', 'operationalTrainNumber', 'op', 'ocpTTs', 'stops', 'cancellation'];
 
   @ViewChild(MatSort) sort: MatSort;
   @ViewChild(MatPaginator) paginator: MatPaginator;

@@ -1,0 +1,27 @@
+<mat-card>
+  <mat-card-title>Graph</mat-card-title>
+  <mat-card-content fxLayout="column">
+
+    <cytoscape-graph #graphChild title="Grapth"
+                     class="medium-graph"
+                     [debug]=true
+                     [showToolbar]=true
+                     [nodes]="nodes"
+                     [edges]="edges"
+                     [layoutOptions]="layoutOptions"
+                     [style]="stylesheet">
+
+    </cytoscape-graph>
+    <cytoscape-graph-toolbar [(layoutOptions)]="layoutOptions"
+                             [(styles)]="stylesheet"
+                             [showToolbarButtons]="true"
+                             (layoutOptionsChange)="bigGraphLayoutToolbarChange($event)"
+                             (stylesChange)="bigGraphLayoutStylesToolbarChange($event)"
+                             (styleSelectorChange)="bigGraphLayoutStylesSelectorChange($event)"
+                             [nodes]="nodes"
+                             [edges]="edges"
+                             direction="column"
+    ></cytoscape-graph-toolbar>
+
+  </mat-card-content>
+</mat-card>
