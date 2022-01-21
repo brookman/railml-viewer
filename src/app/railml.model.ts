@@ -35,7 +35,7 @@ export interface IDesignator {
   attributes: {
     register: string,
     entry: string
-  }
+  };
 }
 
 export interface ITimetable {
@@ -56,7 +56,7 @@ export interface ITimetablePeriod {
     description: string,
     startDate: string,
     endDate: string
-  }
+  };
 }
 
 export interface IOperatingPeriods {
@@ -69,7 +69,7 @@ export interface IOperatingPeriod {
     name: string,
     description: string,
     bitMask: string
-  }
+  };
 }
 
 export interface ITrainParts {
@@ -85,7 +85,7 @@ export interface ITrainPart {
     categoryRef: string,
     line: string,
     cancellation: string,
-  }
+  };
   operatingPeriodRef: IOperatingPeriodRef;
   ocpsTT: IOcpsTT;
 }
@@ -93,7 +93,7 @@ export interface ITrainPart {
 export interface IOperatingPeriodRef {
   attributes: {
     ref: string,
-  }
+  };
 }
 
 export interface IOcpsTT {
@@ -106,7 +106,7 @@ export interface IOcpTT {
     ocpType: string,
     sequence: string,
     trackInfo: string,
-  }
+  };
   times: ITime | ITime[];
 }
 
@@ -115,14 +115,14 @@ export interface ITime {
     scope: string,
     arrival?: string,
     departure?: string,
-  }
+  };
 }
 
 export interface ITrains {
   train: ITrain | ITrain[];
 }
 
-type TrainTypeString = "operational" | "commercial";
+type TrainTypeString = 'operational' | 'commercial';
 
 export interface ITrain {
   attributes: {
@@ -131,14 +131,14 @@ export interface ITrain {
     trainNumber: string,
     additionalTrainNumber?: string,
     name: string,
-  }
+  };
   trainPartSequence: ITrainPartSequence | ITrainPartSequence[];
 }
 
 export interface ITrainPartSequence {
   attributes: {
     sequence: string,
-  }
+  };
   trainPartRef: ITrainPartRef | ITrainPartRef[];
 }
 
@@ -146,7 +146,7 @@ export interface ITrainPartRef {
   attributes: {
     position: string,
     ref: string,
-  }
+  };
 }
 
 // -----------------------------------------------------
@@ -156,10 +156,10 @@ export class Ocp {
   name: string;
   code: string;
   didok?: string;
-  x: number = 0;
-  y: number = 0;
-  lat: number = 0;
-  lon: number = 0;
+  x = 0;
+  y = 0;
+  lat = 0;
+  lon = 0;
 
   constructor(iOcp: IOcp) {
     this.id = iOcp.attributes.id;
@@ -167,7 +167,7 @@ export class Ocp {
     this.code = iOcp.attributes.code;
     this.didok = iOcp.designator?.attributes.entry;
     if (iOcp.geoCoord) {
-      let coords: string[] = iOcp.geoCoord.attributes.coord.split(' ');
+      const coords: string[] = iOcp.geoCoord.attributes.coord.split(' ');
       this.x = Ocp.convertStringToNumber(coords[1]);
       this.y = Ocp.convertStringToNumber(coords[0]);
       this.lat = this.CHtoWGSlat(this.y, this.x);
@@ -175,8 +175,8 @@ export class Ocp {
     }
   }
 
-  private static convertStringToNumber(input: string) {
-    if (!input || input.trim().length == 0) {
+  private static convertStringToNumber(input: string): number {
+    if (!input || input.trim().length === 0) {
       return NaN;
     }
     return Number(input);
@@ -185,20 +185,20 @@ export class Ocp {
   CHtoWGSlat(y: number, x: number): number {
     // Converts military to civil and to unit = 1000km
     // Auxiliary values (% Bern)
-    let y_aux = (y - 600000) / 1000000;
-    let x_aux = (x - 200000) / 1000000;
+    const yAux = (y - 600000) / 1000000;
+    const xAux = (x - 200000) / 1000000;
     // let y_aux = (y - 0) / 1000000;
     // let x_aux = (x - 0) / 1000000;
 
     // Process lat
     let lat = 16.9023892 +
-      3.238272 * x_aux -
-      0.270978 * Math.pow(y_aux, 2) -
-      0.002528 * Math.pow(x_aux, 2) -
-      0.0447 * Math.pow(y_aux, 2) * x_aux -
-      0.0140 * Math.pow(x_aux, 3);
+      3.238272 * xAux -
+      0.270978 * Math.pow(yAux, 2) -
+      0.002528 * Math.pow(xAux, 2) -
+      0.0447 * Math.pow(yAux, 2) * xAux -
+      0.0140 * Math.pow(xAux, 3);
 
-    // Unit 10000" to 1 " and converts seconds to degrees (dec)
+    // Unit 10000' to 1 ' and converts seconds to degrees (dec)
     lat = lat * 100 / 36;
 
     return lat;
@@ -207,19 +207,19 @@ export class Ocp {
   CHtoWGSlng(y: number, x: number): number {
     // Converts military to civil and	to unit = 1000km
     // Auxiliary values (% Bern)
-    let y_aux = (y - 600000) / 1000000;
-    let x_aux = (x - 200000) / 1000000;
+    const yAux = (y - 600000) / 1000000;
+    const xAux = (x - 200000) / 1000000;
     // let y_aux = (y - 0) / 1000000;
     // let x_aux = (x - 0) / 1000000;
 
     // Process lng
     let lng = 2.6779094 +
-      4.728982 * y_aux +
-      0.791484 * y_aux * x_aux +
-      0.1306 * y_aux * Math.pow(x_aux, 2) -
-      0.0436 * Math.pow(y_aux, 3);
+      4.728982 * yAux +
+      0.791484 * yAux * xAux +
+      0.1306 * yAux * Math.pow(xAux, 2) -
+      0.0436 * Math.pow(yAux, 3);
 
-    // Unit 10000" to 1 " and converts seconds to degrees (dec)
+    // Unit 10000' to 1 ' and converts seconds to degrees (dec)
     lng = lng * 100 / 36;
 
     return lng;
@@ -244,7 +244,7 @@ export class OperatingPeriod {
     this.setBitMask(bitMask);
   }
 
-  public static parse(iTimetablePeriod: ITimetablePeriod, iOperatingPeriod: IOperatingPeriod) {
+  public static parse(iTimetablePeriod: ITimetablePeriod, iOperatingPeriod: IOperatingPeriod): OperatingPeriod {
     return new OperatingPeriod(
       iOperatingPeriod.attributes.id,
       new Date(iTimetablePeriod.attributes.startDate),
@@ -255,10 +255,19 @@ export class OperatingPeriod {
     );
   }
 
-  private setBitMask(bitMask: string) {
+  private static dateDiffInDays(a: Date, b: Date): number {
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+    // Discard the time and time-zone information.
+    const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+    const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+
+    return Math.floor((utc2 - utc1) / MS_PER_DAY);
+  }
+
+  private setBitMask(bitMask: string): void {
     this.bitMask = bitMask;
 
-    let utfMaskArray = [];
+    const utfMaskArray = [];
     for (let i = 0; i < bitMask.length; i++) {
       utfMaskArray.push(bitMask.charAt(i) === '1' ? '\u25A0' : '\u25A1');
     }
@@ -266,14 +275,14 @@ export class OperatingPeriod {
   }
 
   public getBit(date: Date): boolean {
-    let diff = OperatingPeriod.dateDiffInDays(this.startDate, date);
+    const diff = OperatingPeriod.dateDiffInDays(this.startDate, date);
     return this.bitMask?.charAt(diff) === '1';
   }
 
-  public setBit(date: Date, value: boolean) {
-    let diff = OperatingPeriod.dateDiffInDays(this.startDate, date);
+  public setBit(date: Date, value: boolean): void {
+    const diff = OperatingPeriod.dateDiffInDays(this.startDate, date);
 
-    let newBitMask = [];
+    const newBitMask = [];
     for (let i = 0; i < this.bitMask.length; i++) {
       if (i === diff) {
         newBitMask.push(value ? '1' : '0');
@@ -285,7 +294,7 @@ export class OperatingPeriod {
   }
 
   public intersectsWith(otherOp: OperatingPeriod): boolean {
-    let diff = OperatingPeriod.dateDiffInDays(otherOp.startDate, this.startDate);
+    const diff = OperatingPeriod.dateDiffInDays(otherOp.startDate, this.startDate);
     for (let i = 0; i < this.bitMask.length; i++) {
       if (this.bitMask.charAt(i) === '1' && otherOp.bitMask.charAt(i + diff) === '1') {
         return true;
@@ -295,22 +304,13 @@ export class OperatingPeriod {
   }
 
   public contains(otherOp: OperatingPeriod): boolean {
-    let diff = OperatingPeriod.dateDiffInDays(otherOp.startDate, this.startDate);
+    const diff = OperatingPeriod.dateDiffInDays(otherOp.startDate, this.startDate);
     for (let i = 0; i < this.bitMask.length; i++) {
       if (this.bitMask.charAt(i) === '1' && otherOp.bitMask.charAt(i + diff) !== '1') {
         return false;
       }
     }
     return true;
-  }
-
-  private static dateDiffInDays(a: Date, b: Date) {
-    const MS_PER_DAY = 1000 * 60 * 60 * 24;
-    // Discard the time and time-zone information.
-    const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
-    const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-
-    return Math.floor((utc2 - utc1) / MS_PER_DAY);
   }
 }
 
@@ -338,9 +338,9 @@ export class TrainPart {
     this.cancellation = iTrainPart.attributes.cancellation === 'true';
 
     // OcpTTs
-    for (let iOcpTT of Util.toArray(iTrainPart.ocpsTT.ocpTT)) {
-      let ocp = ocps.get(iOcpTT.attributes.ocpRef);
-      let ocpTT = new OcpTT(iOcpTT, ocp);
+    for (const iOcpTT of Util.toArray(iTrainPart.ocpsTT.ocpTT)) {
+      const ocp = ocps.get(iOcpTT.attributes.ocpRef);
+      const ocpTT = new OcpTT(iOcpTT, ocp);
       this.ocpTTs.push(ocpTT);
     }
 
@@ -361,7 +361,7 @@ export class TrainPart {
   }
 
   get fromCode(): string {
-    return this.ocpTTs[0].ocp.code || this.from.substr(0, 4);
+    return this.ocpTTs[0].ocp.code || this.from.substring(0, 4);
   }
 
   get to(): string {
@@ -369,7 +369,7 @@ export class TrainPart {
   }
 
   get toCode(): string {
-    return this.ocpTTs[this.ocpTTs.length - 1].ocp.code || this.to.substr(0, 4);
+    return this.ocpTTs[this.ocpTTs.length - 1].ocp.code || this.to.substring(0, 4);
   }
 
   get timesReferenced(): number {
@@ -405,11 +405,11 @@ export class OcpTT {
   }
 
   get departureUtc(): number | undefined {
-    return OcpTT.getUTC(this.departure ? this.departure : this.arrival)
+    return OcpTT.getUTC(this.departure ? this.departure : this.arrival);
   }
 
   get arrivalUtc(): number | undefined {
-    return OcpTT.getUTC(this.arrival ? this.arrival : this.departure)
+    return OcpTT.getUTC(this.arrival ? this.arrival : this.departure);
   }
 
   private static getUTC(time: string | undefined): number | undefined {
@@ -417,7 +417,7 @@ export class OcpTT {
       return undefined;
     }
     const ts = time.split(':');
-    return Date.UTC(1970, 0, 1, parseInt(ts[0]), parseInt(ts[1]), parseInt(ts[2]));
+    return Date.UTC(1970, 0, 1, parseInt(ts[0], 10), parseInt(ts[1], 10), parseInt(ts[2], 10));
   }
 }
 
@@ -435,22 +435,23 @@ export class Train {
   constructor(iTrain: ITrain, trainParts: Map<string, TrainPart>) {
     this.id = iTrain.attributes.id;
     this.type = iTrain.attributes.type === 'operational' ? TrainType.OPERATIONAL : TrainType.COMMERCIAL;
-    this.trainNumber = iTrain.attributes.trainNumber + (iTrain.attributes.additionalTrainNumber ? (' - ' + iTrain.attributes.additionalTrainNumber) : '');
+    this.trainNumber = iTrain.attributes.trainNumber + (iTrain.attributes.additionalTrainNumber ?
+      (' - ' + iTrain.attributes.additionalTrainNumber) : '');
     this.name = iTrain.attributes.name;
 
     // TrainPartSequences
-    for (let iSeq of Util.toArray(iTrain.trainPartSequence)) {
-      let tpSeq = new TrainPartSequence(iSeq, trainParts);
+    for (const iSeq of Util.toArray(iTrain.trainPartSequence)) {
+      const tpSeq = new TrainPartSequence(iSeq, trainParts);
       this.trainPartSequences.push(tpSeq);
     }
 
     // TrainParts flat
-    for (let seq of this.trainPartSequences) {
+    for (const seq of this.trainPartSequences) {
       let first = true;
       let lastPosition = 0;
       let offset = 0;
-      for (let tp of seq.trainParts) {
-        let span = first ? seq.trainParts.length : 0;
+      for (const tp of seq.trainParts) {
+        const span = first ? seq.trainParts.length : 0;
         first = false;
         if (tp.position === lastPosition) {
           offset++;
@@ -466,35 +467,23 @@ export class Train {
   }
 
   getRelatedTrainsRecursively(): Set<Train> {
-    let relatedTrains: Set<Train> = new Set();
+    const relatedTrains: Set<Train> = new Set();
     this.addAllRelatedTrainsRecursively(relatedTrains, this);
     return relatedTrains;
   }
 
-  private addAllRelatedTrainsRecursively(relatedTrains: Set<Train>, train: Train) {
+  private addAllRelatedTrainsRecursively(relatedTrains: Set<Train>, train: Train): void {
     if (!relatedTrains.has(train)) {
       relatedTrains.add(train);
-      for (let relatedTrain of train.relatedTrains) {
+      for (const relatedTrain of train.relatedTrains) {
         this.addAllRelatedTrainsRecursively(relatedTrains, relatedTrain);
       }
     }
   }
 
-  get numberOfSequences(): number {
-    return this.trainPartSequences.length;
-  }
-
-  get numberOfTrainParts(): number {
-    let sum = 0;
-    for (let seq of this.trainPartSequences) {
-      sum += seq.trainParts.length;
-    }
-    return sum;
-  }
-
   get complexity(): number {
     let relatedComplexity = 0;
-    for (let relatedTrain of this.relatedTrains) {
+    for (const relatedTrain of this.relatedTrains) {
       relatedComplexity += relatedTrain.complexitySelf;
     }
     return this.complexitySelf * relatedComplexity;
@@ -506,19 +495,19 @@ export class TrainPartSequence {
   trainParts: TrainPartRef[] = [];
 
   constructor(iTrainPartSequence: ITrainPartSequence, trainParts: Map<string, TrainPart>) {
-    this.sequence = parseInt(iTrainPartSequence.attributes.sequence);
+    this.sequence = parseInt(iTrainPartSequence.attributes.sequence, 10);
 
     // TrainParts
-    for (let iRef of Util.toArray(iTrainPartSequence.trainPartRef)) {
-      let tp = trainParts.get(iRef.attributes.ref);
-      let tpRef = new TrainPartRef(iRef, tp);
+    for (const iRef of Util.toArray(iTrainPartSequence.trainPartRef)) {
+      const tp = trainParts.get(iRef.attributes.ref);
+      const tpRef = new TrainPartRef(iRef, tp);
       this.trainParts.push(tpRef);
     }
   }
 }
 
 export class Util {
-  public static toArray(obj: any) {
+  public static toArray(obj: any): any[] {
     if (obj === undefined || obj === null) {
       return [];
     }
@@ -531,7 +520,7 @@ export class TrainPartRef {
   trainPart: TrainPart;
 
   constructor(iTrainPartRef: ITrainPartRef, trainPart: TrainPart) {
-    this.position = parseInt(iTrainPartRef.attributes.position);
+    this.position = parseInt(iTrainPartRef.attributes.position, 10);
     this.trainPart = trainPart;
   }
 }
@@ -578,34 +567,35 @@ export class Railml {
   commercialTrainList: Train[] = [];
 
   constructor(iRailmlDocument: IRailmlDocument) {
-    let iTimetablePeriod = Util.toArray(iRailmlDocument.railml.timetable.timetablePeriods.timetablePeriod)[0]; // there should be exactly one
+    // there should be exactly one:
+    const iTimetablePeriod = Util.toArray(iRailmlDocument.railml.timetable.timetablePeriods.timetablePeriod)[0];
     this.startDate = new Date(iTimetablePeriod.attributes.startDate);
     this.endDate = new Date(iTimetablePeriod.attributes.endDate);
 
     // OCPs
-    for (let iocp of Util.toArray(iRailmlDocument.railml.infrastructure.operationControlPoints.ocp)) {
-      let ocp = new Ocp(iocp);
+    for (const iocp of Util.toArray(iRailmlDocument.railml.infrastructure.operationControlPoints.ocp)) {
+      const ocp = new Ocp(iocp);
       this.ocps.set(ocp.id, ocp);
     }
 
     // OPs
-    for (let iop of Util.toArray(iRailmlDocument.railml.timetable.operatingPeriods.operatingPeriod)) {
-      let op = OperatingPeriod.parse(iTimetablePeriod, iop);
+    for (const iop of Util.toArray(iRailmlDocument.railml.timetable.operatingPeriods.operatingPeriod)) {
+      const op = OperatingPeriod.parse(iTimetablePeriod, iop);
       this.ops.set(op.id, op);
       this.sortedOps.push(op);
     }
     this.sortedOps.sort();
 
     // TrainParts
-    for (let itp of Util.toArray(iRailmlDocument.railml.timetable.trainParts.trainPart)) {
-      let op = this.ops.get(itp.operatingPeriodRef.attributes.ref);
-      let tp = new TrainPart(itp, op, this.ocps);
+    for (const itp of Util.toArray(iRailmlDocument.railml.timetable.trainParts.trainPart)) {
+      const op = this.ops.get(itp.operatingPeriodRef.attributes.ref);
+      const tp = new TrainPart(itp, op, this.ocps);
       this.trainParts.set(tp.id, tp);
     }
 
     // Trains
-    for (let itrain of Util.toArray(iRailmlDocument.railml.timetable.trains.train)) {
-      let train = new Train(itrain, this.trainParts);
+    for (const itrain of Util.toArray(iRailmlDocument.railml.timetable.trains.train)) {
+      const train = new Train(itrain, this.trainParts);
       this.trains.set(train.id, train);
       if (train.type === TrainType.OPERATIONAL) {
         this.operationalTrains.set(train.id, train);
@@ -623,10 +613,10 @@ export class Railml {
     this.commercialTrainList.sort((a, b) => a.trainNumber.localeCompare(b.trainNumber));
 
     // Create TrainPart->Train references
-    for (let train of this.trains.values()) {
-      for (let seq of train.trainPartSequences) {
-        for (let tpRef of seq.trainParts) {
-          let trainPart = tpRef.trainPart;
+    for (const train of this.trains.values()) {
+      for (const seq of train.trainPartSequences) {
+        for (const tpRef of seq.trainParts) {
+          const trainPart = tpRef.trainPart;
           trainPart.referencedBy.add(train);
           trainPart.updateReferencedBy();
         }
@@ -634,17 +624,17 @@ export class Railml {
     }
 
     // Create Train->Train relations
-    for (let train of this.trains.values()) {
-      for (let seq of train.trainPartSequences) {
-        for (let tpRef of seq.trainParts) {
-          let trainPart = tpRef.trainPart;
+    for (const train of this.trains.values()) {
+      for (const seq of train.trainPartSequences) {
+        for (const tpRef of seq.trainParts) {
+          const trainPart = tpRef.trainPart;
           train.relatedTrains = new Set([...train.relatedTrains, ...trainPart.referencedBy]);
         }
       }
       train.relatedTrains.delete(train); // remove self
     }
 
-    for (let train of this.trains.values()) {
+    for (const train of this.trains.values()) {
       train.relatedTrainsRecursive = train.getRelatedTrainsRecursively();
       train.relatedTrainsRecursive.delete(train); // remove self
     }
