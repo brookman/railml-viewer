@@ -43,6 +43,7 @@ export interface ITimetable {
   operatingPeriods: IOperatingPeriods;
   trainParts: ITrainParts;
   trains: ITrains;
+  rosterings?: IRosterings;
 }
 
 export interface ITimetablePeriods {
@@ -104,8 +105,8 @@ export interface IOcpTT {
   attributes: {
     ocpRef: string,
     ocpType: string,
-    sequence: string,
-    trackInfo: string,
+    sequence?: string,
+    trackInfo?: string,
   };
   times: ITime | ITime[];
 }
@@ -148,6 +149,59 @@ export interface ITrainPartRef {
     ref: string,
   };
 }
+
+export interface IRosterings {
+  rostering: IRostering | IRostering[];
+}
+
+export interface IRostering {
+  attributes: {
+    id: string,
+    // name: string,
+  };
+  blockParts?: IBlockParts;
+  blocks?: IBlocks;
+  // circulations?: ICirculations;
+}
+
+export interface IBlockParts {
+  blockPart: IBlockPart | IBlockPart[];
+}
+
+export interface IBlocks {
+  block: IBlock | IBlock[];
+}
+
+export interface IBlockPart {
+  attributes: {
+    id: string,
+    mission: string,
+    trainPartRef?: string,
+    formationRef?: string,
+  };
+}
+
+export interface IBlock {
+  blockPartSequence: IBlockPartSequence | IBlockPartSequence[];
+}
+
+export interface IBlockPartSequence {
+  attributes: {
+    id: string,
+    name: string,
+  };
+  blockPartRef: IBlockPartRef;
+}
+
+export interface IBlockPartRef {
+  attributes: {
+    ref: string,
+  };
+}
+
+// export interface ICirculations {
+//   circulation: ICirculation | ICirculation[];
+// }
 
 // -----------------------------------------------------
 
@@ -399,8 +453,8 @@ export class OcpTT {
   constructor(iOcpTT: IOcpTT, ocp: Ocp) {
     this.ocpType = iOcpTT.attributes.ocpType;
     this.trackInfo = iOcpTT.attributes.trackInfo;
-    this.arrival = iOcpTT.times[1].attributes.arrival;
-    this.departure = iOcpTT.times[1].attributes.departure;
+    this.arrival = Util.toArray(iOcpTT.times).find(t => 'scheduled' === t.attributes.scope).attributes.arrival;
+    this.departure = Util.toArray(iOcpTT.times).find(t => 'scheduled' === t.attributes.scope).attributes.departure;
     this.ocp = ocp;
   }
 
@@ -506,14 +560,6 @@ export class TrainPartSequence {
   }
 }
 
-export class Util {
-  public static toArray(obj: any): any[] {
-    if (obj === undefined || obj === null) {
-      return [];
-    }
-    return Array.isArray(obj) ? obj : [obj];
-  }
-}
 
 export class TrainPartRef {
   position: number;
@@ -550,6 +596,20 @@ export enum TrainType {
   COMMERCIAL = 'commercial'
 }
 
+export class TrainTour {
+  from: TrainPart;
+  to: TrainPart;
+  type: string;
+  operatingPeriod?: OperatingPeriod;
+
+  constructor(from: TrainPart, to: TrainPart, type: string, operatingPeriod?: OperatingPeriod,) {
+    this.from = from;
+    this.to = to;
+    this.type = type;
+    this.operatingPeriod = operatingPeriod;
+  }
+}
+
 export class Railml {
   startDate: Date;
   endDate: Date;
@@ -565,6 +625,8 @@ export class Railml {
   trainList: Train[] = [];
   operationalTrainList: Train[] = [];
   commercialTrainList: Train[] = [];
+
+  trainTours: TrainTour[] = [];
 
   constructor(iRailmlDocument: IRailmlDocument) {
     // there should be exactly one:
@@ -638,5 +700,37 @@ export class Railml {
       train.relatedTrainsRecursive = train.getRelatedTrainsRecursively();
       train.relatedTrainsRecursive.delete(train); // remove self
     }
+
+    const rosterings = iRailmlDocument.railml.timetable.rosterings;
+    if (rosterings) {
+      for (const rostering of Util.toArray(rosterings.rostering)) {
+        const blockParts = new Map<string, IBlockPart>();
+        for (const blockPart of Util.toArray(rostering.blockParts.blockPart)) {
+          blockParts.set(blockPart.attributes.id, blockPart);
+        }
+        for (const block of Util.toArray(rostering.blocks.block)) {
+          let prevBlockPart: IBlockPart = null;
+          for (const seq of Util.toArray(block.blockPartSequence)) {
+            const ref = seq.blockPartRef.attributes.ref;
+            const blockPart = blockParts.get(ref);
+            if (blockPart && prevBlockPart) {
+              const from = this.trainParts.get(prevBlockPart.attributes.trainPartRef);
+              const to = this.trainParts.get(blockPart.attributes.trainPartRef);
+              this.trainTours.push(new TrainTour(from, to, '?', null));
+            }
+            prevBlockPart = blockPart;
+          }
+        }
+      }
+    }
+  }
+}
+
+export class Util {
+  public static toArray<T>(obj: T | T[]): T[] {
+    if (obj === undefined || obj === null) {
+      return [];
+    }
+    return Array.isArray(obj) ? obj : [obj];
   }
 }

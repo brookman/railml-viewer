@@ -36,14 +36,16 @@ export class GraphComponent implements OnInit {
     new StylesheetImpl('edge', {
       'curve-style': 'bezier',
       'line-color': 'blue',
-      'target-arrow-color': 'blue',
+      // 'target-arrow-color': 'blue',
       'target-arrow-shape': 'triangle'
     }),
-    new StylesheetImpl('edge[sourceShape, targetShape]', {
+    new StylesheetImpl('edge[sourceShape, targetShape, color]', {
       // @ts-ignore
       'source-arrow-shape': 'data(sourceShape)',
       // @ts-ignore
-      'target-arrow-shape': 'data(targetShape)'
+      'target-arrow-shape': 'data(targetShape)',
+      // @ts-ignore
+      'line-color': 'data(color)'
     }),
     new StylesheetImpl(':parent', {
       'text-valign': 'top',
@@ -88,6 +90,7 @@ export class GraphComponent implements OnInit {
                 target: train.trainParts[i + 1].trainPart.id,
                 sourceShape: 'none',
                 targetShape: 'triangle',
+                color: 'blue',
               }
             });
           }
@@ -117,6 +120,18 @@ export class GraphComponent implements OnInit {
               }
             }
           }
+        }
+
+        for (const trainTour of railml.trainTours) {
+          this.edges.push({
+            data: {
+              source: trainTour.from.id,
+              target: trainTour.to.id,
+              sourceShape: 'none',
+              targetShape: 'triangle',
+              color: 'red',
+            }
+          });
         }
         this.graph?.render();
       }, err => console.error('Error: ', err));
