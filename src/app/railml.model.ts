@@ -600,12 +600,14 @@ export class TrainTour {
   from: TrainPart;
   to: TrainPart;
   type: string;
+  index: number;
   operatingPeriod?: OperatingPeriod;
 
-  constructor(from: TrainPart, to: TrainPart, type: string, operatingPeriod?: OperatingPeriod,) {
+  constructor(from: TrainPart, to: TrainPart, type: string, index?: number, operatingPeriod?: OperatingPeriod) {
     this.from = from;
     this.to = to;
     this.type = type;
+    this.index = index;
     this.operatingPeriod = operatingPeriod;
   }
 }
@@ -708,6 +710,7 @@ export class Railml {
         for (const blockPart of Util.toArray(rostering.blockParts.blockPart)) {
           blockParts.set(blockPart.attributes.id, blockPart);
         }
+        let index = 0;
         for (const block of Util.toArray(rostering.blocks.block)) {
           let prevBlockPart: IBlockPart = null;
           for (const seq of Util.toArray(block.blockPartSequence)) {
@@ -716,10 +719,11 @@ export class Railml {
             if (blockPart && prevBlockPart) {
               const from = this.trainParts.get(prevBlockPart.attributes.trainPartRef);
               const to = this.trainParts.get(blockPart.attributes.trainPartRef);
-              this.trainTours.push(new TrainTour(from, to, '?', null));
+              this.trainTours.push(new TrainTour(from, to, '?', index, null));
             }
             prevBlockPart = blockPart;
           }
+          index++;
         }
       }
     }

@@ -1,13 +1,13 @@
-import {Injectable} from "@angular/core";
-import {ComponentStore} from "@ngrx/component-store";
-import {OperatingPeriod, Railml, Train, TrainPart, TrainType} from "./railml.model";
-import {filter, map} from "rxjs/operators";
-import {Observable} from "rxjs";
+import {Injectable} from '@angular/core';
+import {ComponentStore} from '@ngrx/component-store';
+import {OperatingPeriod, Railml, Train, TrainPart, TrainType} from './railml.model';
+import {filter, map} from 'rxjs/operators';
+import {Observable} from 'rxjs';
 
 export interface AppSate {
-  railml?: Railml,
-  filter: RailFilterState,
-  map: MapState,
+  railml?: Railml;
+  filter: RailFilterState;
+  map: MapState;
 }
 
 export interface RailFilterState {
@@ -31,11 +31,12 @@ export enum MatchingMode {
 }
 
 export class TrainFilterResult {
+  railml: Railml;
   // operatingPeriod?: OperatingPeriod = null;
   trains: Train[] = [];
   commercialTrains: Train[] = [];
   operationalTrains: Train[] = [];
-  trainParts: TrainPart[] = [];
+  trainParts: Set<TrainPart> = new Set();
   greyedOutTrains: Set<Train> = new Set();
   greyedOutTrainParts: Set<TrainPart> = new Set();
   hiddenTrainParts: Set<TrainPart> = new Set();
@@ -48,9 +49,9 @@ export class TrainFilterResult {
 export class MapState {
   selectedTrains: Train[] = [];
   selectedTrainParts: TrainPart[] = [];
-  showStations: boolean = false;
-  utcTime: number = 0;
-  min: number = 0;
+  showStations = false;
+  utcTime = 0;
+  min = 0;
   max: number = 24 * 3600 * 1000;
 }
 
@@ -163,27 +164,28 @@ export class AppStore extends ComponentStore<AppSate> {
       return null;
     }
 
-    let firstOp = availableOps[0];
-    let ops: OperatingPeriod[] = [...railFilter.selectedOps];
+    const firstOp = availableOps[0];
+    const ops: OperatingPeriod[] = [...railFilter.selectedOps];
 
     if (!!railFilter.singleDate) {
-      let singleDayOp = new OperatingPeriod('gen', firstOp.startDate, firstOp.endDate, 'generated', 'generated', Array.from('0'.repeat(firstOp.bitMask.length)).join(''));
+      const singleDayOp = new OperatingPeriod('gen', firstOp.startDate, firstOp.endDate, 'generated',
+        'generated', Array.from('0'.repeat(firstOp.bitMask.length)).join(''));
       singleDayOp.setBit(railFilter.singleDate, true);
-      ops.push(singleDayOp)
+      ops.push(singleDayOp);
     }
 
     let result = Array.from('1'.repeat(firstOp.bitMask.length));
 
     if (ops.length > 0) {
-      if (railFilter.combineOperation == CombineOperation.Union) {
+      if (railFilter.combineOperation === CombineOperation.Union) {
         result = Array.from('0'.repeat(firstOp.bitMask.length));
-        for (let op of ops) {
+        for (const op of ops) {
           for (let i = 0; i < result.length; i++) {
             result[i] = (op.bitMask.charAt(i) === '1' || result[i] === '1') ? '1' : '0';
           }
         }
-      } else if (railFilter.combineOperation == CombineOperation.Intersect) {
-        for (let op of ops) {
+      } else if (railFilter.combineOperation === CombineOperation.Intersect) {
+        for (const op of ops) {
           for (let i = 0; i < result.length; i++) {
             result[i] = (op.bitMask.charAt(i) === '1' && result[i] === '1') ? '1' : '0';
           }
@@ -195,34 +197,36 @@ export class AppStore extends ComponentStore<AppSate> {
   }
 
   private static getFilteredTrains(railml: Railml, railFilter: RailFilterState, op: OperatingPeriod | null): TrainFilterResult {
-    let trainNumberFilterString = railFilter.trainNumber.trim().toLowerCase();
+    const trainNumberFilter = railFilter.trainNumber.trim().toLowerCase();
 
-    let result = new TrainFilterResult();
+    const result = new TrainFilterResult();
+    result.railml = railml;
     result.trains = railml.trainList;
 
-    if (trainNumberFilterString.length > 0) {
-      result.trains = result.trains.filter(train => train.trainNumber.startsWith(trainNumberFilterString));
+    if (trainNumberFilter.length > 0) {
+      result.trains = AppStore.filterByTrainNumber(railFilter, result.trains);
       result.directMatches = new Set(result.trains);
       if (railFilter.showRelated) {
-        let related = new Set<Train>();
-        for (let train of result.trains) {
+        const related = new Set<Train>();
+        for (const train of result.trains) {
           related.add(train);
-          for (let relatedTrain of train.getRelatedTrainsRecursively()) {
+          for (const relatedTrain of train.getRelatedTrainsRecursively()) {
             related.add(relatedTrain);
           }
         }
         result.trains = Array.from(related);
-
       }
     }
 
     if (!!op) {
-      let filteredTrains = [];
-      for (let train of result.trains) {
+      const filteredTrains = [];
+      for (const train of result.trains) {
         let hasIntersections = false;
-        for (let trainPartRef of train.trainParts) {
-          if (railFilter.matchingMode === MatchingMode.Any ? trainPartRef.trainPart.op.intersectsWith(op) : trainPartRef.trainPart.op.contains(op)) {
+        for (const trainPartRef of train.trainParts) {
+          if (railFilter.matchingMode === MatchingMode.Any ?
+            trainPartRef.trainPart.op.intersectsWith(op) : trainPartRef.trainPart.op.contains(op)) {
             hasIntersections = true;
+            result.trainParts.add(trainPartRef.trainPart);
           } else if (railFilter.outsideOpGreyedOut) {
             result.greyedOutTrainParts.add(trainPartRef.trainPart);
           } else {
@@ -233,7 +237,7 @@ export class AppStore extends ComponentStore<AppSate> {
           filteredTrains.push(train);
         } else if (railFilter.outsideOpGreyedOut) {
           filteredTrains.push(train);
-          result.greyedOutTrains.add(train)
+          result.greyedOutTrains.add(train);
         }
       }
       result.trains = filteredTrains;
@@ -248,14 +252,29 @@ export class AppStore extends ComponentStore<AppSate> {
     return result;
   }
 
+  private static filterByTrainNumber(railFilter: RailFilterState, trains: Train[]): Train[] {
+    const trainNumberFilter = railFilter.trainNumber.trim().toLowerCase();
+
+    if (trainNumberFilter.length === 0 || trainNumberFilter === '!') {
+      return trains;
+    }
+
+    if (trainNumberFilter.startsWith('!')) {
+      const notTrainNumberFilter = trainNumberFilter.substring(1);
+      return trains.filter(train => !train.trainNumber.startsWith(notTrainNumberFilter));
+    } else {
+      return trains.filter(train => train.trainNumber.startsWith(trainNumberFilter));
+    }
+  }
+
   private static toggle<T>(list: T[], elementToToggle: T): T[] {
-    let set = new Set(list);
+    const set = new Set(list);
     if (set.has(elementToToggle)) {
       set.delete(elementToToggle);
     } else {
       set.add(elementToToggle);
     }
-    let result = Array.from(set);
+    const result = Array.from(set);
     result.sort();
     return result;
   }
@@ -264,13 +283,13 @@ export class AppStore extends ComponentStore<AppSate> {
     let min = 24 * 3600 * 1000;
     let max = 0;
 
-    let selectedTrainParts = [];
+    const selectedTrainParts = [];
 
-    for (let train of selectedTrains) {
-      for (let trainPartRef of train.trainParts) {
-        let trainPart = trainPartRef.trainPart
-        selectedTrainParts.push(trainPart)
-        for (let ocpTT of trainPart.ocpTTs) {
+    for (const train of selectedTrains) {
+      for (const trainPartRef of train.trainParts) {
+        const trainPart = trainPartRef.trainPart;
+        selectedTrainParts.push(trainPart);
+        for (const ocpTT of trainPart.ocpTTs) {
           min = Math.min(min, ocpTT.arrivalUtc);
           max = Math.max(max, ocpTT.departureUtc);
         }
@@ -282,7 +301,7 @@ export class AppStore extends ComponentStore<AppSate> {
       max = 24 * 3600 * 1000;
     }
 
-    return {...mapState, selectedTrains, selectedTrainParts, min, max, utcTime: min}
+    return {...mapState, selectedTrains, selectedTrainParts, min, max, utcTime: min};
   }
 
 
@@ -297,7 +316,7 @@ export class AppStore extends ComponentStore<AppSate> {
       combineOperation: CombineOperation.Union,
       matchingMode: MatchingMode.Any,
       outsideOpGreyedOut: true
-    }
+    };
   }
 
   public static getDefaultMapState(): MapState {
@@ -308,6 +327,6 @@ export class AppStore extends ComponentStore<AppSate> {
       utcTime: 0,
       min: 0,
       max: 24 * 3600 * 1000
-    }
+    };
   }
 }
