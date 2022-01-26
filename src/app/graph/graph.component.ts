@@ -6,7 +6,7 @@ import {EdgeDefinition, LayoutOptions, NodeDefinition, Stylesheet, use} from 'cy
 // @ts-ignore
 import dagre from 'cytoscape-dagre';
 import {StylesheetImpl} from './style';
-import {TrainPart} from '../railml.model';
+import {TrainPart, TrainTourType} from '../railml.model';
 import {AppStore, TrainFilterResult} from '../app.store';
 import {debounceTime} from 'rxjs';
 
@@ -35,7 +35,7 @@ export class GraphComponent implements OnInit {
     new StylesheetImpl('node[color]', {
       'background-color': 'data(color)',
     }),
-    new StylesheetImpl('edge[sourceShape, targetShape, color]', {
+    new StylesheetImpl('edge[sourceShape, targetShape, color, style]', {
       'curve-style': 'bezier',
       // @ts-ignore
       'source-arrow-shape': 'data(sourceShape)',
@@ -45,6 +45,8 @@ export class GraphComponent implements OnInit {
       'target-arrow-color': 'data(color)',
       // @ts-ignore
       'line-color': 'data(color)',
+      // @ts-ignore
+      'line-style': 'data(style)',
     }),
     new StylesheetImpl(':parent', {
       'text-valign': 'top',
@@ -71,6 +73,8 @@ export class GraphComponent implements OnInit {
     const railml = filteredData.railml;
 
     this.nodes = [];
+    this.edges = [];
+
     const trainPartToNode = new Map<TrainPart, NodeDefinition>();
     for (const tp of filteredData.trainParts.values()) {
       const node = {
@@ -82,25 +86,6 @@ export class GraphComponent implements OnInit {
       };
       this.nodes.push(node);
       trainPartToNode.set(tp, node);
-    }
-
-    this.edges = [];
-    for (const train of filteredData.commercialTrains) {
-      for (let i = 0; i < train.trainParts.length - 1; i++) {
-        const from = train.trainParts[i].trainPart;
-        const to = train.trainParts[i + 1].trainPart;
-        if (trainPartToNode.has(from) && trainPartToNode.has(to)) {
-          this.edges.push({
-            data: {
-              source: from.id,
-              target: to.id,
-              sourceShape: 'none',
-              targetShape: 'triangle',
-              color: 'black',
-            }
-          });
-        }
-      }
     }
 
     for (const train of filteredData.operationalTrains) {
@@ -129,39 +114,64 @@ export class GraphComponent implements OnInit {
       }
     }
 
-    const colors = [
-      '#e6194b',
-      '#3cb44b',
-      '#ffe119',
-      '#4363d8',
-      '#f58231',
-      '#911eb4',
-      '#46f0f0',
-      '#f032e6',
-      '#bcf60c',
-      '#fabebe',
-      '#008080',
-      '#e6beff',
-      '#9a6324',
-      '#fffac8',
-      '#800000',
-      '#aaffc3',
-      '#808000',
-      '#ffd8b1',
-      '#000075',
-      '#808080'];
+    const colors = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8',
+      '#f58231', '#911eb4', '#46f0f0', '#f032e6',
+      '#bcf60c', '#fabebe', '#008080', '#e6beff',
+      '#9a6324', '#fffac8', '#800000', '#aaffc3',
+      '#808000', '#ffd8b1', '#000075', '#808080'];
 
     for (const trainTour of railml.trainTours) {
-      if (trainPartToNode.has(trainTour.from && trainTour.to)) {
-        this.edges.push({
-          data: {
-            source: trainTour.from.id,
-            target: trainTour.to.id,
-            sourceShape: 'none',
-            targetShape: 'triangle',
-            color: colors[trainTour.index % colors.length],
-          }
-        });
+      if (trainPartToNode.has(trainTour.from) && trainPartToNode.has(trainTour.to)) {
+        switch (trainTour.type) {
+          case TrainTourType.TIME_TABLE:
+            this.edges.push({
+              data: {
+                source: trainTour.from.id,
+                target: trainTour.to.id,
+                sourceShape: 'none',
+                targetShape: 'triangle',
+                color: 'black',
+                style: 'solid',
+              }
+            });
+            break;
+          case TrainTourType.PARALLEL_TO_TIME_TABLE:
+            this.edges.push({
+              data: {
+                source: trainTour.from.id,
+                target: trainTour.to.id,
+                sourceShape: 'none',
+                targetShape: 'triangle',
+                color: colors[trainTour.index % colors.length],
+                style: 'solid',
+              }
+            });
+            break;
+          case TrainTourType.SHORT_TURN:
+            this.edges.push({
+              data: {
+                source: trainTour.from.id,
+                target: trainTour.to.id,
+                sourceShape: 'none',
+                targetShape: 'triangle',
+                color: colors[trainTour.index % colors.length],
+                style: 'dotted',
+              }
+            });
+            break;
+          case TrainTourType.LONG_TURN:
+            this.edges.push({
+              data: {
+                source: trainTour.from.id,
+                target: trainTour.to.id,
+                sourceShape: 'none',
+                targetShape: 'triangle',
+                color: colors[trainTour.index % colors.length],
+                style: 'dashed',
+              }
+            });
+            break;
+        }
       }
     }
     console.log('render');

@@ -599,17 +599,24 @@ export enum TrainType {
 export class TrainTour {
   from: TrainPart;
   to: TrainPart;
-  type: string;
+  type: TrainTourType;
   index: number;
   operatingPeriod?: OperatingPeriod;
 
-  constructor(from: TrainPart, to: TrainPart, type: string, index?: number, operatingPeriod?: OperatingPeriod) {
+  constructor(from: TrainPart, to: TrainPart, type: TrainTourType, index?: number, operatingPeriod?: OperatingPeriod) {
     this.from = from;
     this.to = to;
     this.type = type;
     this.index = index;
     this.operatingPeriod = operatingPeriod;
   }
+}
+
+export enum TrainTourType {
+  TIME_TABLE,
+  PARALLEL_TO_TIME_TABLE,
+  SHORT_TURN,
+  LONG_TURN,
 }
 
 export class Railml {
@@ -703,6 +710,18 @@ export class Railml {
       train.relatedTrainsRecursive.delete(train); // remove self
     }
 
+    // train tours:
+
+    const timeTableTrainTours = new Map<TrainPart, TrainPart>();
+    for (const train of this.commercialTrainList) {
+      for (let i = 0; i < train.trainParts.length - 1; i++) {
+        const from = train.trainParts[i].trainPart;
+        const to = train.trainParts[i + 1].trainPart;
+        this.trainTours.push(new TrainTour(from, to, TrainTourType.TIME_TABLE, 0, null));
+        timeTableTrainTours.set(from, to);
+      }
+    }
+
     const rosterings = iRailmlDocument.railml.timetable.rosterings;
     if (rosterings) {
       for (const rostering of Util.toArray(rosterings.rostering)) {
@@ -713,15 +732,26 @@ export class Railml {
         let index = 0;
         for (const block of Util.toArray(rostering.blocks.block)) {
           let prevBlockPart: IBlockPart = null;
+          let longTurnInProgress = false;
           for (const seq of Util.toArray(block.blockPartSequence)) {
             const ref = seq.blockPartRef.attributes.ref;
             const blockPart = blockParts.get(ref);
             if (blockPart && prevBlockPart) {
-              const from = this.trainParts.get(prevBlockPart.attributes.trainPartRef);
-              const to = this.trainParts.get(blockPart.attributes.trainPartRef);
-              this.trainTours.push(new TrainTour(from, to, '?', index, null));
+              if (blockPart.attributes.mission === 'timetable') {
+                const from = this.trainParts.get(prevBlockPart.attributes.trainPartRef);
+                const to = this.trainParts.get(blockPart.attributes.trainPartRef);
+                const type = longTurnInProgress ? TrainTourType.LONG_TURN :
+                  ((timeTableTrainTours.has(from) && timeTableTrainTours.get(from) === to) ?
+                    TrainTourType.PARALLEL_TO_TIME_TABLE : TrainTourType.SHORT_TURN);
+                this.trainTours.push(new TrainTour(from, to, type, index, null));
+                prevBlockPart = blockPart;
+                longTurnInProgress = false;
+              } else if (blockPart.attributes.mission === 'shunting') {
+                longTurnInProgress = true;
+              }
+            } else {
+              prevBlockPart = blockPart;
             }
-            prevBlockPart = blockPart;
           }
           index++;
         }
