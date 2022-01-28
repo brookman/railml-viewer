@@ -175,6 +175,10 @@ export class GraphComponent implements OnInit {
       }
     }
     console.log('render');
+    // // @ts-ignore
+    // this.graph?.cy.on('click', 'node', (evt) => {
+    //   console.log('on node clicked ', evt);
+    // });
     this.graph?.render();
   }
 
